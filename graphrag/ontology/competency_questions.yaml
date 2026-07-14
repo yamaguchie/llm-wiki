@@ -1,0 +1,144 @@
+# コンピテンシー質問（CQ） — 文京区 障害者福祉ドメイン
+# Phase 2 成果物（ontology_graphrag_pipeline_spec.md §Phase2）
+# 出典: LLM-Wiki（pages/, entities/）。各CQは「このシステムが答えられるべき問い」を定義し、
+#       Phase3(オントロジー設計スコープ) と Phase5/6(回帰テスト) で参照する。
+#
+# フィールド:
+#   id            : 一意ID
+#   question      : 自然言語の問い
+#   type          : lookup | multi_hop | aggregation | constraint | exclusion | compatibility
+#   graph_pattern : 期待されるグラフ探索（Cypher風・疑似）
+#   answer_shape  : 期待される回答の形
+#   source        : 根拠となるwikiページ
+#   review        : 値レビュー要否（金額・法的閾値は human_required）
+
+version: "1.0.0"
+domain: "bunkyo-disability-welfare"
+competency_questions:
+
+  - id: CQ01
+    question: "身体障害者手帳2級を持つ人が受けられる文京区の手当と月額は？"
+    type: multi_hop
+    graph_pattern: |
+      MATCH (n:Notebook {name:'身体障害者手帳'})<-[r:REQUIRES]-(s:Service)-[:HAS_CATEGORY]->(:ServiceCategory {name:'手当年金'})
+      WHERE '2' IN r.grades
+      RETURN s.name, s.benefit_tiers
+    answer_shape: "手当名 + 該当等級の月額 + 支給月 + 所得制限有無"
+    source: [pages/04-allowances-pensions.md]
+    review: human_required   # 金額
+
+  - id: CQ02
+    question: "移動支援・同行援護の利用者負担が無料になるのは月何時間まで？"
+    type: lookup
+    graph_pattern: |
+      MATCH (s:Service {name:'障害者・児移動支援事業'}) RETURN s.free_hours_per_month
+    answer_shape: "時間数（月36時間）"
+    source: [pages/07-daily-life.md, pages/03-services-law.md]
+    review: human_required   # 制度上限値
+
+  - id: CQ03
+    question: "難病の人が補装具費の支給を申請する窓口はどこ？対象疾病はどこで確認できる？"
+    type: multi_hop
+    graph_pattern: |
+      MATCH (s:Service {name:'補装具費の支給'})-[a:ADMINISTERED_BY]->(c:Contact)
+      WHERE a.for = '難病'
+      OPTIONAL MATCH (s)-[:DEFINED_BY]->(ref:Reference)
+      RETURN c.dept, c.phone, ref.name, ref.booklet_page
+    answer_shape: "窓口(部署+電話) + 対象疾病一覧の参照先"
+    source: [pages/06-assistive-devices.md, pages/99-reference.md, entities/key-contacts.md]
+    review: none
+
+  - id: CQ04
+    question: "心身障害者医療費助成（マル障）の対象となる手帳と等級は？所得制限はあるか？"
+    type: constraint
+    graph_pattern: |
+      MATCH (s:Service {name:'心身障害者医療費助成（マル障）'})-[r:REQUIRES]->(n:Notebook)
+      RETURN n.name, r.grades, s.income_limit
+    answer_shape: "対象手帳×等級のリスト + 所得制限の有無"
+    source: [pages/05-medical.md]
+    review: none
+
+  - id: CQ05
+    question: "医療的ケア児が利用できる在宅・日中支援サービスをすべて挙げて"
+    type: aggregation
+    graph_pattern: |
+      MATCH (s:Service)-[:TARGETS]->(:TargetCategory {code:'児'})
+      WHERE s.medical_care_child = true
+      RETURN s.name, s.provider, s.age_range
+    answer_shape: "サービス名の網羅リスト + 各対象年齢/実施主体"
+    source: [pages/07-daily-life.md, pages/14-children-services.md]
+    review: none
+
+  - id: CQ06
+    question: "心身障害者等福祉手当を受けられないのはどんな人か？"
+    type: exclusion
+    graph_pattern: |
+      MATCH (s:Service {name:'心身障害者等福祉手当（区制度）'}) RETURN s.excludes
+    answer_shape: "受給不可条件のリスト"
+    source: [pages/04-allowances-pensions.md]
+    review: none
+
+  - id: CQ07
+    question: "精神障害者福祉手当（区制度）と心身障害者等福祉手当は併給できるか？"
+    type: compatibility
+    graph_pattern: |
+      MATCH (a:Service {name:'精神障害者福祉手当（区制度）'})-[m:MUTUALLY_EXCLUSIVE_WITH]-(b:Service {name:'心身障害者等福祉手当（区制度）'})
+      RETURN m IS NOT NULL AS mutually_exclusive
+    answer_shape: "併給可否（不可）+ 根拠（受給できない方の条項）"
+    source: [pages/04-allowances-pensions.md]
+    review: none
+
+  - id: CQ08
+    question: "精神障害者保健福祉手帳1級の人が受けられる手当・医療の助成は？"
+    type: multi_hop
+    graph_pattern: |
+      MATCH (n:Notebook {name:'精神障害者保健福祉手帳'})<-[r:REQUIRES]-(s:Service)
+      WHERE '1' IN r.grades
+      RETURN s.name, s.category, s.benefit_tiers
+    answer_shape: "サービス名 + 給付内容"
+    source: [pages/04-allowances-pensions.md, pages/05-medical.md]
+    review: human_required
+
+  - id: CQ09
+    question: "障害者虐待に気づいたとき、平日夜間や休日はどこに通報する？電話番号は？"
+    type: lookup
+    graph_pattern: |
+      MATCH (s:Service {name:'障害者虐待の防止'})-[a:ADMINISTERED_BY]->(c:Contact)
+      WHERE a.hours CONTAINS '夜間'
+      RETURN c.dept, c.phone, a.hours
+    answer_shape: "通報先(部署+電話) + 対応時間帯"
+    source: [pages/19-rights-advocacy.md, pages/01-consultation.md]
+    review: none
+
+  - id: CQ10
+    question: "身体障害者手帳2級の人が使える交通機関の割引・助成を挙げて"
+    type: multi_hop
+    graph_pattern: |
+      MATCH (n:Notebook {name:'身体障害者手帳'})<-[r:REQUIRES]-(s:Service)-[:HAS_CATEGORY]->(:ServiceCategory {name:'交通'})
+      WHERE '2' IN r.grades
+      RETURN s.name, s.benefit_tiers
+    answer_shape: "割引/助成サービス名のリスト"
+    source: [pages/10-taxi-car-parking.md, pages/11-fare-discounts.md]
+    review: none
+
+  - id: CQ11
+    question: "特別児童扶養手当の申請窓口はどこで、対象年齢は？"
+    type: lookup
+    graph_pattern: |
+      MATCH (s:Service {name:'特別児童扶養手当（国制度）'})-[:ADMINISTERED_BY]->(c:Contact)
+      RETURN c.dept, c.phone, s.age_range
+    answer_shape: "窓口 + 対象年齢"
+    source: [pages/04-allowances-pensions.md]
+    review: none
+
+  - id: CQ12
+    question: "所得制限のある手当を一覧し、限度額の確認先を示して"
+    type: aggregation
+    graph_pattern: |
+      MATCH (s:Service)-[:HAS_CATEGORY]->(:ServiceCategory {name:'手当年金'})
+      WHERE s.income_limit = true
+      OPTIONAL MATCH (s)-[:DEFINED_BY]->(ref:Reference {kind:'income_limit'})
+      RETURN s.name, ref.booklet_page
+    answer_shape: "所得制限ありの手当リスト + 限度額表の参照先"
+    source: [pages/04-allowances-pensions.md, pages/99-reference.md]
+    review: human_required
