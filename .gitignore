@@ -1,0 +1,11 @@
+# secrets — never commit
+.env
+**/.env
+!**/.env.example
+
+# runtime / generated
+.server.pid
+**/.server.pid
+__pycache__/
+**/__pycache__/
+*.pyc
