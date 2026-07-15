@@ -9,3 +9,8 @@
 __pycache__/
 **/__pycache__/
 *.pyc
+# レビューUIの生成CQ/レビュー判定/生成オントロジー（実行時データ）
+graphrag/review/review_state.json
+# 抽出のたびに再生成される出力（実行時データ）
+graphrag/review/kg_extracted.json
+graphrag/review/neo4j_import.cypher
