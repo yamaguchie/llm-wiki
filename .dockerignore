@@ -1,0 +1,24 @@
+# .dockerignore — exclude files that shouldn't be in the Docker image
+__pycache__
+*.pyc
+.git
+.gitignore
+node_modules
+.kilo
+.claude
+*.pid
+Dockerfile
+docker-compose.yml
+nginx.conf
+.dockerignore
+*.log
+load_report.txt
+validation_report.txt
+venv
+.env
+*.ps1
+*.cmd
+*.bat
+*.exe
+bk
+doc

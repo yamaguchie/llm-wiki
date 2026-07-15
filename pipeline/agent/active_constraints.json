@@ -1,0 +1,86 @@
+{
+ "generated_at": "2026-07-15T20:49:53.529892",
+ "constraints": [
+  {
+   "target_class": "PhysicalDisabilityHandbook",
+   "target_property": "gradeOrDegree",
+   "target_entity": null,
+   "description": "身体障害者手帳の等級は1級から6級までです。",
+   "value": "1〜6級",
+   "unit": null,
+   "source": "disability-notebooks"
+  },
+  {
+   "target_class": "AiNoTecho",
+   "target_property": "gradeOrDegree",
+   "target_entity": null,
+   "description": "愛の手帳の度数は1度から4度までです。",
+   "value": "1〜4度",
+   "unit": null,
+   "source": "disability-notebooks"
+  },
+  {
+   "target_class": "MentalDisabilityHandbook",
+   "target_property": "gradeOrDegree",
+   "target_entity": null,
+   "description": "精神障害者保健福祉手帳の等級は1級から3級までです。",
+   "value": "1〜3級",
+   "unit": null,
+   "source": "disability-notebooks"
+  },
+  {
+   "target_class": "AiNoTecho",
+   "target_property": "validityPeriod",
+   "target_entity": null,
+   "description": "愛の手帳は3・6・12・18歳で年齢更新の再判定が必要です。",
+   "value": "3,6,12,18",
+   "unit": "歳",
+   "source": "disability-notebooks"
+  },
+  {
+   "target_class": "MentalDisabilityHandbook",
+   "target_property": "validityPeriod",
+   "target_entity": null,
+   "description": "精神障害者保健福祉手帳の有効期限は原則2年です。",
+   "value": "2",
+   "unit": "年",
+   "source": "disability-notebooks"
+  },
+  {
+   "target_class": "MentalDisabilityHandbook",
+   "target_property": "targetDisabilityCategory",
+   "target_entity": null,
+   "description": "精神障害者保健福祉手帳は知的障害のみの方は対象外です。",
+   "value": "知的障害のみ",
+   "unit": null,
+   "source": "disability-notebooks"
+  },
+  {
+   "target_class": "ChildWithDisability",
+   "target_property": "age",
+   "target_entity": null,
+   "description": "障害児は18歳未満を指します。",
+   "value": "18",
+   "unit": "歳未満",
+   "source": "target-categories"
+  },
+  {
+   "target_class": "BunkyoDisabilityWelfareDivision",
+   "target_property": "faxNumber",
+   "target_entity": null,
+   "description": "障害福祉課のFAX番号は共通で03-5803-1352です。",
+   "value": "03-5803-1352",
+   "unit": null,
+   "source": "key-contacts"
+  },
+  {
+   "target_class": "BunkyoPreventionMeasuresDivision",
+   "target_property": "faxNumber",
+   "target_entity": null,
+   "description": "予防対策課のFAX番号は03-5803-1355です。",
+   "value": "03-5803-1355",
+   "unit": null,
+   "source": "key-contacts"
+  }
+ ]
+}

@@ -1,0 +1,315 @@
+{
+  "nodes": [
+    {
+      "id": "nb_physical_disability_handbook",
+      "labels": [
+        "PhysicalDisabilityHandbook"
+      ],
+      "props": {
+        "name": "身体障害者手帳",
+        "source": "ai-no-techo",
+        "type_label": "身体障害者手帳"
+      }
+    },
+    {
+      "id": "nb_bunkyo_disability_welfare_division",
+      "labels": [
+        "BunkyoDisabilityWelfareDivision"
+      ],
+      "props": {
+        "name": "文京区 障害福祉課",
+        "source": "disability-welfare-division",
+        "type_label": "文京区 障害福祉課"
+      }
+    },
+    {
+      "id": "contact_disability_welfare",
+      "labels": [
+        "ContactWindow"
+      ],
+      "props": {
+        "name": "障害福祉課 相談の窓口",
+        "source": "disability-welfare-division",
+        "type_label": "相談の窓口"
+      }
+    },
+    {
+      "id": "nb_mental_disability_handbook",
+      "labels": [
+        "MentalDisabilityHandbook"
+      ],
+      "props": {
+        "name": "精神障害者保健福祉手帳",
+        "source": "shintaishogaisha-techo",
+        "type_label": "精神障害者保健福祉手帳"
+      }
+    },
+    {
+      "id": "nb_bunkyo_prevention_measures_division",
+      "labels": [
+        "BunkyoPreventionMeasuresDivision"
+      ],
+      "props": {
+        "name": "文京区 予防対策課",
+        "source": "disability-welfare-division",
+        "type_label": "文京区 予防対策課"
+      }
+    },
+    {
+      "id": "nb_public_health_service_center",
+      "labels": [
+        "PublicHealthServiceCenter"
+      ],
+      "props": {
+        "name": "保健サービスセンター",
+        "source": "disability-welfare-division",
+        "type_label": "保健サービスセンター"
+      }
+    },
+    {
+      "id": "nb_ai_no_techo",
+      "labels": [
+        "AiNoTecho"
+      ],
+      "props": {
+        "name": "愛の手帳（知的障害者手帳）",
+        "source": "handbooks",
+        "type_label": "愛の手帳（知的障害者手帳）"
+      }
+    },
+    {
+      "id": "nb_child_consultation_center",
+      "labels": [
+        "ChildConsultationCenter"
+      ],
+      "props": {
+        "name": "児童相談所",
+        "source": "disability-welfare-division",
+        "type_label": "児童相談所"
+      }
+    },
+    {
+      "id": "svc_automobile_accident_support",
+      "labels": [
+        "AutomobileAccidentSupportSystem"
+      ],
+      "props": {
+        "name": "自動車事故被害者支援制度",
+        "source": "allowances-pensions-loans",
+        "type_label": "自動車事故被害者支援制度"
+      }
+    },
+    {
+      "id": "nb_bunbun_marushe",
+      "labels": [
+        "DisabilityFacility"
+      ],
+      "props": {
+        "name": "ぶんぶんまるしぇ",
+        "source": "bunkyo-city",
+        "type_label": "障害者施設"
+      }
+    },
+    {
+      "id": "svc_chronic_pediatric_disease_daily_living_aid",
+      "labels": [
+        "ChronicPediatricDiseaseDailyLivingAidBenefit"
+      ],
+      "props": {
+        "name": "小児慢性特定疾病児童日常生活用具給付",
+        "source": "chronic-pediatric-disease-medical-expense-subsidy,nichijo-seikatsu-yogu-no-kyufu",
+        "type_label": "小児慢性特定疾病児童日常生活用具給付",
+        "pageNumber": 75
+      }
+    },
+    {
+      "id": "svc_parking_fee_reduction",
+      "labels": [
+        "ParkingFeeReductionSystem"
+      ],
+      "props": {
+        "name": "駐車料金減額制度",
+        "source": "chusha-kinshi-no-taisho-jogai",
+        "type_label": "駐車料金減額制度",
+        "pageNumber": 113
+      }
+    },
+    {
+      "id": "svc_anshin_consultation",
+      "labels": [
+        "AnshinConsultationService"
+      ],
+      "props": {
+        "name": "手をつなぐあんしん相談",
+        "source": "consultation-windows",
+        "type_label": "手をつなぐあんしん相談"
+      }
+    },
+    {
+      "id": "svc_daily_living_aid_reduction",
+      "labels": [
+        "ReductionSystem"
+      ],
+      "props": {
+        "name": "日常生活用具給付事業の利用者負担減免",
+        "source": "daily-living-aids-benefit",
+        "type_label": "軽減制度"
+      }
+    },
+    {
+      "id": "svc_yometeru",
+      "labels": [
+        "InformationSupport"
+      ],
+      "props": {
+        "name": "ヨメテル(文字表示電話サービス)",
+        "source": "denwa-relay-service",
+        "type_label": "情報支援"
+      }
+    },
+    {
+      "id": "svc_ear_mark",
+      "labels": [
+        "EarMark"
+      ],
+      "props": {
+        "name": "耳マーク",
+        "source": "ear-mark",
+        "type_label": "耳マーク"
+      }
+    },
+    {
+      "id": "svc_evacuation_registry",
+      "labels": [
+        "EvacuationSupportRegistry"
+      ],
+      "props": {
+        "name": "避難行動要支援者名簿",
+        "source": "fukushi-hinanjo-no-secchi",
+        "type_label": "避難行動要支援者名簿",
+        "pageNumber": 94
+      }
+    },
+    {
+      "id": "svc_help_mark",
+      "labels": [
+        "HelpMark"
+      ],
+      "props": {
+        "name": "ヘルプマーク",
+        "source": "heart-plus-mark,help-card",
+        "type_label": "ヘルプマーク"
+      }
+    },
+    {
+      "id": "svc_help_card",
+      "labels": [
+        "HelpCard"
+      ],
+      "props": {
+        "name": "ヘルプカード",
+        "source": "help-mark",
+        "type_label": "ヘルプカード",
+        "pageNumber": 98
+      }
+    },
+    {
+      "id": "svc_respite_service",
+      "labels": [
+        "MedicalCareChildRespiteService"
+      ],
+      "props": {
+        "name": "医療的ケア児在宅レスパイト事業",
+        "source": "iryoteki-care-ji-no-shakai-taiken-program",
+        "type_label": "医療的ケア児在宅レスパイト事業",
+        "pageNumber": 85
+      }
+    },
+    {
+      "id": "svc_himawari_room",
+      "labels": [
+        "MedicalCareChildSupportRoomHimawari"
+      ],
+      "props": {
+        "name": "医療的ケア児支援ルームひまわり",
+        "source": "iryoteki-care-ji-zaitaku-respite-jigyo",
+        "type_label": "医療的ケア児支援ルームひまわり",
+        "pageNumber": 86
+      }
+    },
+    {
+      "id": "svc_magnetic_loop_installation",
+      "labels": [
+        "MagneticLoopInstallationService"
+      ],
+      "props": {
+        "name": "磁気ループの設置",
+        "source": "onsei-yudo-sochi-no-secchi",
+        "type_label": "磁気ループ設置サービス",
+        "pageNumber": 104
+      }
+    },
+    {
+      "id": "svc_braille_book_benefit",
+      "labels": [
+        "BrailleBookBenefitSystem"
+      ],
+      "props": {
+        "name": "点字図書の給付",
+        "source": "kuritsu-toshokan-no-riyo-shien",
+        "type_label": "点字図書給付制度",
+        "pageNumber": 101
+      }
+    },
+    {
+      "id": "svc_driving_license_acquisition_subsidy",
+      "labels": [
+        "DrivingLicenseAcquisitionSubsidy"
+      ],
+      "props": {
+        "name": "心身障害者自動車運転免許取得経費補助",
+        "source": "shintai-shogaisha-jidousha-kaizo-hi-josei",
+        "type_label": "運転免許取得費助成",
+        "pageNumber": 110
+      }
+    },
+    {
+      "id": "svc_nighttime_mental_consultation",
+      "labels": [
+        "NighttimeMentalHealthPhoneConsultation"
+      ],
+      "props": {
+        "name": "夜間こころの電話相談",
+        "source": "tokyo-psychiatric-mental-health-center",
+        "type_label": "夜間精神保健電話相談"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "nb_physical_disability_handbook",
+      "to": "nb_bunkyo_disability_welfare_division",
+      "type": "hasApplicationWindow"
+    },
+    {
+      "from": "nb_bunkyo_disability_welfare_division",
+      "to": "contact_disability_welfare",
+      "type": "hasContactInfo"
+    },
+    {
+      "from": "nb_mental_disability_handbook",
+      "to": "nb_bunkyo_prevention_measures_division",
+      "type": "hasApplicationWindow"
+    },
+    {
+      "from": "nb_mental_disability_handbook",
+      "to": "nb_public_health_service_center",
+      "type": "hasApplicationWindow"
+    },
+    {
+      "from": "nb_ai_no_techo",
+      "to": "nb_child_consultation_center",
+      "type": "hasAssessmentLocationForMinors"
+    }
+  ]
+}
