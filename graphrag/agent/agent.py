@@ -13,6 +13,15 @@ CLI: py -3.14 agent.py "質問"
 import json, os, sys, math
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+
+# ── アクティブ制約の読み込み ──
+CONSTRAINTS_PATH = os.path.join(HERE, "active_constraints.json")
+_ACTIVE_CONSTRAINTS = []
+if os.path.isfile(CONSTRAINTS_PATH):
+    try:
+        import json
+        _ACTIVE_CONSTRAINTS = json.load(open(CONSTRAINTS_PATH, encoding="utf-8")).get("constraints", [])
+    except: pass
 import gemini_client as gc
 
 # ---------- data ----------
@@ -90,43 +99,64 @@ def svc_card(sid):
     }
 
 # ---------- retrieval per subgoal ----------
-def retrieve(sg, trace):
-    kind = sg.get("kind"); facts = []; used = ""
+def retrieve(sg, trace, step=None):
+    kind = sg.get("kind"); facts = []; used = ""; touched = []
+    step = step or [0]
     nb = NBS.get(sg.get("notebook")) if sg.get("notebook") else None
     cat = CATS.get(sg.get("category")) if sg.get("category") else None
     grade = sg.get("grade")
     if kind == "eligible" and nb:
         ids = services_by_notebook_grade(nb, grade, cat); used = "graph:REQUIRES"
-        facts = [svc_card(i) for i in ids]
+        facts = [svc_card(i) for i in ids]; touched = list(ids)
     elif kind == "category" and cat:
         facts = [svc_card(i) for i in by_category(cat)]; used = "graph:HAS_CATEGORY"
+        touched = by_category(cat)
     elif kind == "mcc":
-        facts = [svc_card(i) for i in mcc()]; used = "graph:medical_care_child"
+        ids = mcc(); facts = [svc_card(i) for i in ids]; used = "graph:medical_care_child"
+        touched = list(ids)
     elif kind == "compat":
         a, _ = resolve_service(sg.get("service_hint") or "");
         b, _ = resolve_service(sg.get("service_hint2") or "")
         basis = mutual(a, b) if a and b else None
         facts = [{"compat": True, "a": name(a), "b": name(b), "exclusive": bool(basis), "basis": basis}]
-        used = "graph:MUTUALLY_EXCLUSIVE_WITH"
+        used = "graph:MUTUALLY_EXCLUSIVE_WITH"; touched = [a, b] if a and b else []
     elif kind == "abuse":
         sid = "svc_gyakutai"; facts = [svc_card(sid)]; used = "graph:近傍"
-    elif kind in ("service_detail", "contact", "exclusion", "free_hours"):
+        touched = [sid]
+    elif kind in ("service_detail", "constraint", "free_hours"):
         sid, how = resolve_service(sg.get("service_hint") or sg.get("_query") or "")
         if how and how.startswith("vector"):
-            trace.append({"node": "VectorSeed(Gemini埋め込み)", "txt": f'"{sg.get("service_hint")}" → {name(sid)} [{how}]'})
+            trace.append({"node": "VectorSeed(Gemini埋め込み)", "step": step[0], "txt": f'"{sg.get("service_hint")}" → {name(sid)} [{how}]'})
         if sid:
-            facts = [svc_card(sid)]; used = "graph:近傍展開"
+            svc = svc_card(sid)
+            neis = [e["to"] for e in efrom(sid)] + [e["from"] for e in einto(sid)]
+            facts = [svc] + [{"t": "neighbor", "id": nid} for nid in neis]
+            touched = [sid] + neis
+            used = f"graph:近傍展開({len(neis)}エンティティ)"
+    elif kind == "contact":
+        sid, how = resolve_service(sg.get("service_hint") or sg.get("_query") or "")
+        if how and how.startswith("vector"):
+            trace.append({"node": "VectorSeed(Gemini埋め込み)", "step": step[0], "txt": f'"{sg.get("service_hint")}" → {name(sid)} [{how}]'})
+        if sid:
+            svc = svc_card(sid)
+            admins = [e["to"] for e in efrom(sid, "ADMINISTERED_BY")]
+            if sg.get("for"):
+                admins = [e["to"] for e in efrom(sid, "ADMINISTERED_BY") if (e.get("props") or {}).get("for", "").find(sg["for"]) >= 0]
+            refs = [e["to"] for e in efrom(sid, "DEFINED_BY")]
+            facts = [svc, {"t": "contact", "ids": admins}, {"t": "reference", "ids": refs}]
+            touched = [sid] + admins + refs
+            used = f"graph:ADMINISTERED_BY({len(admins)}窓口)+DEFINED_BY({len(refs)}参考)"
     else:
         used = "skip(未知のkind)"
-    trace.append({"node": "Retrieval", "txt": f'{kind} [{used}] 取得{len(facts)}件',
-                  "touched": [f.get("name") for f in facts if f.get("name")][:8]})
+    trace.append({"node": "Retrieval", "step": step[0], "txt": f'{kind} [{used}] 取得{len(facts)}件',
+                  "touched": touched[:16]})
     return facts
 
 # ---------- LLM prompts ----------
 PLANNER_SYS = (
  "あなたは障害者福祉サービス検索エージェントのプランナー。ユーザーの質問を、ナレッジグラフを引くための"
  "サブゴール配列に分解する。kindは次から選ぶ: eligible(手帳と等級で受けられるサービス列挙), "
- "service_detail(特定サービスの詳細), contact(窓口), exclusion(受けられない条件), compat(2制度の併給可否), "
+ "service_detail(特定サービスの詳細), contact(窓口), constraint(条件/制限/併給可否の確認), "
  "free_hours(月何時間無料), mcc(医療的ケア児向け一覧), category(カテゴリ一覧), abuse(虐待通報先). "
  "複合質問(例:手当と医療の両方)は複数サブゴールに分解する。"
  f"利用可能カテゴリ: {list(CATS.keys())}。手帳: {list(NBS.keys())}。"
@@ -137,36 +167,52 @@ PLANNER_SYS = (
 CRITIC_SYS = (
  "あなたは根拠の十分性を判定するクリティック。ユーザーの質問と、取得済みの根拠(JSON)を見て、"
  "回答に十分か判定する。不足なら追加で引くべきサブゴールを1つ提案する。"
- "extra_subgoalのkindは必ず次のいずれか: eligible/service_detail/contact/exclusion/compat/free_hours/mcc/category/abuse。"
+ "extra_subgoalのkindは必ず次のいずれか: eligible/service_detail/contact/constraint/free_hours/mcc/category/abuse。"
  "ユーザーの属性(年齢等)が不明なだけで、グラフから追加で引けるものが無い場合は ok:true とし extra_subgoal:null にする。"
  'JSON形式: {"ok":true/false,"missing":"不足の説明or空","extra_subgoal":null or {"kind":"...","notebook":null,"grade":null,"category":null,"service_hint":null}}'
 )
 ANSWER_SYS = (
- "あなたは文京区の障害者福祉の案内担当。与えられた【根拠】だけを使って、日本語で簡潔に答える。"
- "重要ルール: (1)根拠に無い金額・等級・電話番号を創作しない。(2)金額や窓口(電話)、根拠(wikiページ/原本ページ)を含める。"
- "(3)金額・時間上限・等級には『※令和7年5月末時点、要確認』を一言添える。(4)根拠が不足なら『分かりません/窓口にご確認を』と述べる。"
- "(5)Markdownの見出しや箇条書きで読みやすく。"
+    "あなたは文京区の障害者福祉の案内担当。与えられた【根拠】だけを使って、日本語で簡潔に答える。"
+    "重要ルール: (1)根拠に無い金額・等級・電話番号を創作しない。(2)金額や窓口(電話)、根拠(wikiページ/原本ページ)を含める。"
+    "(3)金額・時間上限・等級には『※令和7年5月末時点、要確認』を一言添える。(4)根拠が不足なら『分かりません/窓口にご確認を』と述べる。"
+    "(5)Markdownの見出しや箇条書きで読みやすく。"
+    + (("\n\n【オントロジー定義からの制約事項（必ず守ること）】\n"
+        + "\n".join(f"- {c['description']}" for c in _ACTIVE_CONSTRAINTS))
+       if _ACTIVE_CONSTRAINTS else "")
 )
 
 def run(query, max_rounds=2):
-    trace = [{"node": "Query", "txt": query}]
+    return _run_impl(query, max_rounds, stream=False)[0]
+
+def run_stream(query, max_rounds=2):
+    return _run_impl(query, max_rounds, stream=True)
+
+def _run_impl(query, max_rounds=2, stream=False):
+    trace = [{"node": "Query", "txt": query, "step": 0}]
+    step = [0]
+    if stream: yield {"type": "trace", "data": trace[-1]}
     # ① Planner
     try:
         plan = gc.chat_json(PLANNER_SYS, f"質問: {query}")
         subgoals = plan.get("subgoals") or []
     except Exception as ex:
         subgoals = [{"kind": "service_detail", "service_hint": query}]
-        trace.append({"node": "Planner", "txt": f"(フォールバック) {ex}"})
+        trace.append({"node": "Planner", "step": step[0], "txt": f"(フォールバック) {ex}"})
+        if stream: yield {"type": "trace", "data": trace[-1]}
     if not subgoals:
         subgoals = [{"kind": "service_detail", "service_hint": query}]
-    trace.append({"node": "Planner(LLM)", "txt": f"{len(subgoals)}サブゴール: " +
+    step[0] += 1
+    trace.append({"node": "Planner(LLM)", "step": step[0], "txt": f"{len(subgoals)}サブゴール: " +
                   ", ".join(s.get("kind","?") for s in subgoals)})
+    if stream: yield {"type": "trace", "data": trace[-1]}
     for s in subgoals: s.setdefault("_query", query)
 
     # ② Retrieval
     facts = []
     for sg in subgoals:
-        facts.extend(retrieve(sg, trace))
+        step[0] += 1
+        facts.extend(retrieve(sg, trace, step))
+        if stream: yield {"type": "trace", "data": trace[-1]}
 
     # ③ Critic → ④ 追加検索ループ
     for r in range(max_rounds):
@@ -174,12 +220,18 @@ def run(query, max_rounds=2):
             crit = gc.chat_json(CRITIC_SYS, f"質問: {query}\n根拠: {json.dumps(facts, ensure_ascii=False)[:6000]}")
         except Exception:
             crit = {"ok": True}
-        trace.append({"node": "Critic(LLM)", "txt": ("十分 ✓" if crit.get("ok") else f'不十分 ✗ — {crit.get("missing","")}')})
+        step[0] += 1
+        trace.append({"node": "Critic(LLM)", "step": step[0], "txt": ("十分 ✓" if crit.get("ok") else f'不十分 ✗ — {crit.get("missing","")}')})
+        if stream: yield {"type": "trace", "data": trace[-1]}
         if crit.get("ok") or not crit.get("extra_subgoal"):
             break
         eg = crit["extra_subgoal"]; eg.setdefault("_query", query)
-        trace.append({"node": "Rewrite→Retrieval", "txt": f'追加: {eg.get("kind")}'})
-        facts.extend(retrieve(eg, trace))
+        step[0] += 1
+        trace.append({"node": "Rewrite→Retrieval", "step": step[0], "txt": f'追加: {eg.get("kind")}'})
+        if stream: yield {"type": "trace", "data": trace[-1]}
+        step[0] += 1
+        facts.extend(retrieve(eg, trace, step))
+        if stream: yield {"type": "trace", "data": trace[-1]}
 
     # ⑤ Answer
     ctx = json.dumps(facts, ensure_ascii=False)[:9000]
@@ -187,7 +239,9 @@ def run(query, max_rounds=2):
         answer = gc.chat(ANSWER_SYS, f"質問: {query}\n\n【根拠】\n{ctx}")
     except Exception as ex:
         answer = f"(回答生成に失敗: {ex})"
-    trace.append({"node": "Answer(LLM)", "txt": f"{len(facts)}件の根拠から生成"})
+    step[0] += 1
+    trace.append({"node": "Answer(LLM)", "step": step[0], "txt": f"{len(facts)}件の根拠から生成"})
+    if stream: yield {"type": "answer", "data": answer, "trace": trace}
     return {"answer": answer, "trace": trace, "n_facts": len(facts)}
 
 if __name__ == "__main__":

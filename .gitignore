@@ -14,3 +14,5 @@ graphrag/review/review_state.json
 # 抽出のたびに再生成される出力（実行時データ）
 graphrag/review/kg_extracted.json
 graphrag/review/neo4j_import.cypher
+# RAG埋め込みキャッシュ（20MB・rag/build_vectors.py 等で再生成可能）
+graphrag/rag/pdf_embeddings.json

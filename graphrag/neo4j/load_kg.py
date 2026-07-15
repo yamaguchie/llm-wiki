@@ -19,6 +19,7 @@ import argparse, json, os, sys, time
 HERE = os.path.dirname(os.path.abspath(__file__))
 CYPHER_FILE = os.path.join(HERE, "..", "graph", "kg.cypher")
 DDL_FILE = os.path.join(HERE, "create_graph_type.cypher")
+GENERATED_CONSTRAINTS_FILE = os.path.join(HERE, "generated_constraints.cypher")
 REPORT_FILE = os.path.join(HERE, "load_report.txt")
 
 R = []
@@ -194,6 +195,15 @@ def run():
         open(REPORT_FILE, "w", encoding="utf-8").write("\n".join(R))
         driver.close()
         sys.exit(1)
+
+    # Step 2b: Apply generated constraints (from ontology definition)
+    if os.path.isfile(GENERATED_CONSTRAINTS_FILE):
+        with open(GENERATED_CONSTRAINTS_FILE, encoding="utf-8") as f:
+            gen_content = f.read()
+        gen_stmts = [s.strip() for s in gen_content.split(";") if s.strip() and not s.strip().startswith("//")]
+        if gen_stmts:
+            R.append(f"Generated constraints: {len(gen_stmts)} statements")
+            run_stmts(driver, gen_stmts, "generated_constraints")
 
     # Step 3: Clean up test residues (from previous runs)
     with driver.session(database="neo4j") as session:

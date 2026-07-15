@@ -1,240 +1,197 @@
-# オントロジー駆動ナレッジグラフ構築パイプライン 仕様書
+# オントロジー駆動ナレッジグラフ構築パイプライン 仕様書（改訂版）
 
 **対象読者**: 実装を担当するClaude Code（本ドキュメントを引き継いだ別セッション）
-**前提スタック**: LangGraph / Neo4j / OWL・SHACL or GRAPH TYPE / FastAPI / Next.js
-**設計思想の親ドキュメント**: 確定申告AIエージェント_仕様書設計書（Section 0テンプレート踏襲）
+**前提スタック**: LangGraph / Neo4j / SHACL or GRAPH TYPE / FastAPI / Next.js
 
 ---
 
-## Section 0: アーキテクチャ決定サマリー
-
-| 決定事項 | 採用方針 | 理由 |
-|---|---|---|
-| ナレッジグラフのデータモデル | プロパティグラフ（Neo4j）ネイティブ | RDF変換オーバーヘッドを避け、Cypherで一貫して開発するため |
-| スキーマ検証方式 | GRAPH TYPE（Neo4j 2026.02 Preview）を第一候補、SHACL+neosemanticsを代替案として保持 | GRAPH TYPEは書き込み時トランザクション検証でLLMエージェントとの相性が良い。ただしPreview機能のため本番はSHACL経由に切替可能な設計にする |
-| オントロジー設計方針 | クラス・関係の骨格はLLM自動生成、値を伴う制約（閾値・法的根拠）は人間必須レビュー | 構造は生成コストが高く人手では非効率、値の正確性はハルシネーションリスクが高いため |
-| ガバナンス | 既存の三層モデル（語彙変更=Git/CI/CD／参照データ=直接CRUD／業務ルール=承認フロー）を踏襲 | 新パイプラインはこのガバナンスに"乗せる"実装であり、代替するものではない |
-
-**重要な注意点（実装前に必ず確認）**
-
-- GRAPH TYPEはNeo4j 2026.02時点でPreview機能。本番運用非推奨、構文が変わる可能性あり。実装時は最新の公式ドキュメントを確認すること。
-- GRAPH TYPEが値レンジ制約（例: `age >= 16`のような閾値）までカバーするかは未確認。カバーしない場合、値制約はアプリケーション層（FastAPI）または既存プロパティ制約で担保すること。
-- 税法などの法的閾値はLLMにハルシネーションのリスクがあるため、**出典（条文・一次情報）が確認できない制約値は自動生成のまま採用しない**こと。
-
----
-
-## 全体パイプライン概要
+## 全体ワークフロー
 
 ```
-生データ
-  ↓
-LLM-Wiki（エージェントが草稿蓄積）
-  ↓
-コンピテンシー質問（CQ）生成
-  ↓
-オントロジー自動生成（マルチエージェントLLM）
-  ↓
-自然言語への逆翻訳 → ドメインエキスパートレビュー（承認 / 差し戻し）
-  ↓
-プロパティグラフ化（Neo4j + GRAPH TYPE）
-  ↓
-Graph RAG（多ホップ探索 + ベクトル検索）
-  ↓
-Agentic Search（反復的な検索ループ：分解→検索→十分性評価→再検索）
+🧭 GraphRAG
+│
+💬 チャット（AgenticSearch + Naive RAG比較）
+│
+Step 1: データクレンジング
+│ 1.1. RAWデータ（PDF）→ テキスト抽出・チャンク分割・埋め込み
+│ 1.2. LLM-Wiki → エンティティ/概念ページの生成（Markdown、[[wikilink]]相互参照）
+│
+Step 2: ドメイン知識の付与
+│ 2.1. CQ（質問＋回答ペア）→ LLM生成＋人間レビュー・追加（専用UI）
+│ 2.2. オントロジー定義 → 承認済みCQ＋LLM-WikiからLLMがクラス・関係・制約を生成
+│ 2.3. オントロジー図 → 生成されたインスタンスKGをSVGフォースグラフで可視化
+│
+Step 3: ナレッジグラフ（GraphRAG）
+│ 3.1. ナレッジグラフ構築 → Neo4jスキーマ＋データ投入＋AgenticSearch
+│ 3.2. 検証UI → トレース可視化＋AgenticSearch vs Naive RAG比較
 ```
 
 ---
 
-## Phase 1: 生データ → LLM-Wiki
+## Phase 1: データクレンジング
 
-### 目的
-生データ（税法条文、社内文書、会話ログ等）から、エージェントが自律的に草稿知識を蓄積する層を作る。
+### 1.1. rawデータ（PDF）
 
-### 実装手順
-1. 生データソースを不変（immutable）なストアとして確保する（原本は編集しない）
-2. LLMエージェントに以下の3種のmarkdownファイルを生成・更新させる
-   - エンティティ/概念ページ（例: `控除.md`, `事業所得.md`）
-   - schemaドキュメント（構造・命名規則を定義する文書。既存のCLAUDE.md相当）
-   - クロスリファレンス（wikilink形式で概念間の関連を記録）
-3. 各ページには生成元の生データへの参照（出典）を必ず付与する
-4. このLLM-Wikiは正式なオントロジーではなく、あくまで**ステージング層**であることをコード上のディレクトリ構成でも明示する（例: `/staging/llm-wiki/` と `/ontology/domain/` を分離）
+**目的**: 原本PDF（例: 障害者福祉のてびき 218ページ）から機械可読なテキストを抽出する。
 
-### 成果物
-- `/staging/llm-wiki/entities/*.md`
-- `/staging/llm-wiki/schema.md`
+**実装手順**:
+1. PDFから全テキストを抽出（pdfplumber等）
+2. スライディングウィンドウでチャンク分割（800文字、150文字オーバーラップ）
+3. チャンク＋埋め込みをJSONで保存（チャンク数: 約500、合計: 約230K文字）
+4. Naive RAG用のデータ源として保持
 
----
+**成果物**:
+- `rag/pdf_chunks.json`（チャンクテキスト＋ページ番号）
+- `rag/pdf_embeddings.json`（各チャンクの埋め込みベクトル）
 
-## Phase 2: コンピテンシー質問（CQ）生成
+### 1.2. LLM-Wiki
 
-### 目的
-「このシステムは何に答えられるべきか」を明文化し、オントロジー設計のスコープと合格基準を定める。
+**目的**: 生データからエージェントが自律的に草稿知識を蓄積する層を作る。
 
-### 実装手順
-1. LLMにPhase1の生データ・LLM-Wikiを読ませ、CQ候補を自動生成させる
-2. CQ候補を人間（ドメインエキスパート）がレビューし、取捨選択する
-3. 確定したCQ一覧をバージョン管理する（`/ontology/competency_questions.yaml`など）
+**実装手順**:
+1. 生データソース（PDF）を不変ストアとして確保（原本は編集しない）
+2. LLMエージェントにMarkdownファイルを生成させる
+   - エンティティ/概念ページ（例: `pages/04-allowances-pensions.md`）
+   - クロスリファレンス（`[[wikilink]]`形式で概念間の関連を記録）
+3. 各ページには生成元の生データへの参照（出典・ページ番号）を必ず付与する
+4. LLM-Wikiは正式なオントロジーではなく、あくまで**ステージング層**
 
-### CQの例（確定申告エージェントの場合）
-- この納税者はいくら医療費控除を受けられるか？
-- 扶養控除の対象となる親族の条件は何か？
-- この経費は事業所得として計上できるか？
-
-### 成果物
-- `/ontology/competency_questions.yaml`（各CQに一意のIDを付与し、Phase3・Phase4で参照する）
+**成果物**:
+- `/pages/*.md`（エンティティページ、24ファイル）
 
 ---
 
-## Phase 3: オントロジー自動生成
+## Phase 2: ドメイン知識の付与
 
-### 目的
-CQとLLM-Wikiを入力に、クラス・関係・制約の候補をLLMに生成させ、人間レビューを経て正式なオントロジーとして確定する。
+### 2.1. CQ（質問＋回答ペア）の作成
 
-### 実装手順
+**目的**: 「このシステムは何に答えられるべきか」を**質問＋期待される回答のペア**として明文化する。
 
-#### 3-1. マルチエージェント構成での草稿生成
-単一LLMでは構造的冗長性・設計パターン非準拠などの失敗が起きやすいため、役割分担したマルチエージェント構成を推奨する。
+**実装手順**:
+1. LLM-Wikiの情報を元に、LLMがCQ候補を**質問＋回答ペア**で自動生成（`POST /api/cq/generate`）
+   - 例: 質問「身体障害者手帳2級で受けられる手当は？」／回答「心身障害者等福祉手当15,500円/月…」
+   - 各CQは疑問形（「〜は？」で終わる）で生成
+2. ドメイン有識者が専用管理UI（CQ管理タブ）で以下を実施:
+   - 各CQの質問と回答の正しさをチェック
+   - 「正しい」「修正必要」「誤り」の3択レビュー（ボタンはカード右下）
+   - 不足CQをテキスト入力で追加（質問＋説明＋期待回答＋タイプ選択）
+3. 確定したCQ一覧をバージョン管理（`ontology/competency_questions.yaml`）
 
-| 役割 | 責務 |
-|---|---|
-| Domain Expert（LLM） | ドメイン知識に基づき候補概念を提案 |
-| Manager（LLM） | 全体構成の一貫性をチェック、重複クラスを検出 |
-| Coder（LLM） | OWL/Cypher形式で構造化して出力 |
-| QA（LLM） | CQに対する回答テストを実行し不備を検出 |
+**CQ管理UI（FastAPI + 静的HTML、`review/main.py`）**:
+- ナビ: 2.1 CQ（質問＋回答）／2.2 オントロジー定義／2.3 オントロジー図
+- 初期状態: CQ一覧は空（0件）。「🤖 LLMからCQを生成」ボタンでLLM生成後に表示
+- CQカード: 質問（❓青字）＋期待される回答（💡緑枠）を左右に並べて表示
+- タイプバッジ（色分け+ツールチップ）: 単一参照/多段探索/集約/制約確認/除外条件/併給確認
+- 新規追加フォーム: 質問・説明・期待回答＋タイプセレクトボックス
 
-各提案には**出典（Phase1の生データへの参照）を必須で付与**すること。
+**成果物**:
+- `review/main.py`（FastAPI + 静的HTML、CQ/オントロジー管理UI）
+- `ontology/competency_questions.yaml`（各CQ: id, question, expected_answer, type, status）
 
-#### 3-2. 自動整合性チェック
-- OWLリーズナー（HermiT/Pellet等）で論理矛盾（例: `disjointWith`と`subClassOf`の衝突）を検出する
-- 重複クラス・冗長関係を検出し、Managerロールにフィードバックする
+### 2.2. オントロジー定義（LLM自動生成）
 
-#### 3-3. 自然言語への逆翻訳
-- 生成されたOWL/SHACL/Cypher候補を、LLMで平易な日本語文に逆翻訳する
-- 例: `sh:minInclusive 16` → 「扶養親族は16歳以上である必要があります」
+**目的**: 承認済みCQの質問＋回答ペアとLLM-Wikiを入力に、LLMがクラス・関係・制約を生成する。
 
-#### 3-4. CQ回答テスト
-- Phase2で確定したCQを実際にオントロジー（ドラフト版）に対して問い合わせ、期待される回答が得られるか自動テストする
+**実装手順**:
+1. **2.1 CQ** で承認（status=approved）されたCQの質問＋回答ペアを収集
+2. LLM-Wiki（pages/）の内容と合わせてLLM（Gemini）に送信
+3. LLMが2段階で生成:
+   - **Step 1**: オントロジー定義JSON（クラス・プロパティ・関係・制約）
+   - **Step 2**: インスタンスナレッジグラフJSON（kg.json形式: nodes + edges）
+4. 生成結果を画面に表示（クラス定義カード／関係定義カード／制約リスト）
 
-#### 3-5. ドメインエキスパートレビューUI
-- FastAPI + Next.jsで、1画面1項目のレビューUIを実装する
-- 各項目に以下を表示: 自然言語の説明／出典リンク／CQテスト結果／承認・要修正ボタン／コメント欄
-- 承認された項目のみ次フェーズへ
+**API**: `POST /api/ontology/generate`
+- 入力: なし（承認済みCQとLLM-Wikiをサーバー側で収集）
+- 出力: `{classes, relationships, constraints, nodes, edges}`
+- 状態: `GET /api/ontology/definition` で生成結果を取得
 
-#### 3-6. 差し戻しループ
-- 「要修正」の項目は、専門家のコメントをLangGraphの再生成ノードへの入力として渡し、その項目のみ再生成する（全体再生成は行わない）
+**UI（review/main.py「2.2 オントロジー定義」タブ）**:
+- 「🤖 LLMからオントロジーを生成」ボタン
+- 未生成時は空状態メッセージ
+- 生成後: クラス定義一覧（カード、プロパティ＋型＋必須フラグ）
+- 関係定義一覧（from → 関係名 → to、説明＋プロパティ）
+- 制約一覧（説明＋出典）
 
-### 成果物
-- `/ontology/domain/classes.ttl`（またはCypher相当）
-- `/ontology/domain/relations.ttl`
-- `/ontology/domain/constraints.ttl`（人間承認済みのみ）
-- レビュー履歴（承認者・日時・コメントのログ）
+### 2.3. オントロジー図（SVGフォースグラフ）
 
----
+**目的**: 生成されたオントロジーのインスタンスKGを視覚的に確認できるグラフを提供する。
 
-## Phase 4: プロパティグラフ化（Neo4j + GRAPH TYPE）
+**実装手順**:
+1. `GET /api/ontology/generated/kg` からkg.jsonを取得
+2. SVGフォース有向グラフで可視化（`review/main.py`内のJavaScriptで描画）
+3. 機能要件:
+   - ノードはラベル種別ごとに色分け
+   - ノードクリックでプロパティ表示（右パネル）
+   - フォースレイアウト（事前収束、静的に表示）
 
-### 目的
-承認済みオントロジーをNeo4jのネイティブなスキーマ定義として実装し、LLMエージェントによるインスタンス提案を書き込み時に検証する。
-
-### 実装手順
-1. Phase3で確定したクラス階層・関係を、Cypherの`GRAPH TYPE`定義に変換する
-   - ノードラベルの包含関係（例: `:事業所得`は`:所得`ラベルを含意）
-   - 関係の接続先制約（例: `適用可能`関係は`:所得`から`:控除`にのみ許可）
-2. **オープングラフ型**として定義し、Domain/Task層（安定部分）のみを厳格に制約、Instance層は柔軟なまま残す
-3. LLMエージェントはCypherの`MERGE`文でインスタンスを提案する（RDF/Turtle変換は不要）
-4. GRAPH TYPE違反はトランザクション内で即座にロールバックされ、エラーがLangGraphのエージェントへ即時フィードバックされる設計にする
-5. 値レンジ制約（閾値等）がGRAPH TYPEでカバーできない場合、既存のプロパティ制約（`IS NOT NULL`等）またはFastAPI側のバリデーションで補完する
-
-### 代替案（GRAPH TYPEがPreview非対応/不安定な場合）
-- neosemantics（n10s）プラグインでNeo4j⇔RDFの相互変換を行い、SHACLで検証する構成に切り替える
-- この場合、検証は書き込み時ではなく非同期バッチ/CI検証になる点に留意
-
-### 成果物
-- `/graph/schema/graph_type.cypher`
-- （代替案採用時）`/graph/schema/shapes.ttl` + neosemantics設定
+**API**: `GET /api/ontology/generated/kg` → `{nodes, edges}`
 
 ---
 
-## Phase 5: Graph RAG構築
+## Phase 3: ナレッジグラフ（GraphRAG）
 
-### 目的
-検証済みのナレッジグラフに対して、多ホップ探索とベクトル検索を組み合わせた検索層を構築する。
+### 3.1. ナレッジグラフ構築
 
-### 実装手順
-1. Neo4jの各ノードに埋め込みベクトルを付与する（ノードの説明文・属性から生成）
-2. クエリ時に以下の2段階検索を組み合わせる
-   - ベクトル類似検索で起点ノード候補を絞り込む
-   - Cypherの多ホップクエリで関連ノードを探索する
-3. LangGraphのエージェントに検索結果を返し、CQ形式の質問に回答させる
-4. Phase3で作成したCQセットを回帰テストとして流用し、Graph RAGの回答品質を継続的に検証する
+**目的**: 承認済みオントロジー＋業務ルールをNeo4jに実装し、検索可能なナレッジグラフを構築する。
 
-### 成果物
-- `/rag/embedding_pipeline.py`
-- `/rag/graph_retrieval.py`
-- `/rag/regression_tests/`（Phase2のCQを流用）
+**実装手順**:
+1. Neo4jスキーマ定義
+   - ノードラベル（Service, ServiceCategory, TargetCategory, Notebook, Contact, Reference, Facility）
+   - サブラベル（Allowance :: Service, MedicalAid :: Service, AssistiveDevice :: Service, TransportBenefit :: Service）
+   - 関係と端点制約（HAS_CATEGORY, TARGETS, REQUIRES, ADMINISTERED_BY, DEFINED_BY, MUTUALLY_EXCLUSIVE_WITH, RELATED_TO, PROVIDED_AT）
+2. 制約の実装
+   - 一意制約（idベース）
+   - プロパティ存在制約（NOT NULL）
+   - インデックス（検索性能）
+   - GRAPH TYPE（Neo4j 2026.02 Preview、書込時トランザクション検証）
+3. データ投入: kg.json → kg.cypher（MERGE文） → Neo4j（Bolt経由）
+4. AgenticSearch: LangGraph StateGraph（Planner → Retrieval → Critic → Answer）
+   - ベクトル入口（Gemini埋め込み）＋グラフ探索の2段ハイブリッド
+   - サポート: Anthropic Claude / Google Gemini
+5. Naive RAG（比較用）: PDFチャンク + ベクトル類似度Top5 + LLM回答
 
----
+**成果物**:
+- `neo4j/docker-compose.yml`（Neo4j + APOC）
+- `neo4j/create_graph_type.cypher`（スキーマDDL）
+- `neo4j/load_kg.py`（データローダー＋書込時検証）
+- `agent/agent.py`（Gemini agentic loop）
+- `agent/langgraph_app.py`（LangGraph版）
+- `agent/naive_rag.py`（PDF直接RAG比較用）
 
-## Phase 6: Agentic Search（反復的検索ループ）
+### 3.2. 検証UI（チャット画面）
 
-### 目的
-Phase5のGraph RAGは「ベクトル検索→グラフ探索」の固定パイプラインだが、複雑なCQ（多段階の条件判定を要する質問等）では一度の検索では情報が不足することがある。Agentic Searchは、検索自体をLLMエージェントの反復的な意思決定ループにすることで、検索の質を動的に改善する。
+**目的**: AgenticSearchのトレースとNaive RAGの比較表示を提供する。
 
-### 実装手順（LangGraphでのノード設計）
+**実装手順**:
+1. AgenticSearchのトレース可視化
+   - 各ステップをリアルタイムストリーミング表示（ステップ番号バッジ①②③...）
+   - 参照したノード＋エッジを右パネルのグラフ上にハイライト
+2. AgenticSearch vs Naive RAGの比較表示
+   - 同一質問に対する両方式の回答を左右のカードに並べて比較
+   - 出典リンク（Wikiページ / PDFページ）
+3. ナビゲーションメニュー
+   - Step1: 1.1 RAWデータ / 1.2 LLM-Wiki
+   - Step2: 2.1 CQ / 2.2 オントロジー定義 / 2.3 オントロジー図
+   - Step3: 3.1 ナレッジグラフ / 3.2 検証
 
-1. **①クエリ受信**: ユーザー質問またはPhase2のCQをエージェントへ入力する
-2. **②プランナー：分解要否判断**
-   - 複雑な質問（例:「この納税者は医療費控除と扶養控除を両方適用した場合の還付額は？」）はサブクエリに分解する
-   - 単純な質問はそのまま次のステップへ
-3. **③検索実行（ツール動的選択）**
-   - ベクトル検索（意味的類似度）とグラフ探索（多ホップ・関係性ベース）を、質問の性質に応じて動的に選択する
-   - 両方を組み合わせるハイブリッド検索も可能にする
-4. **④エビデンスギャップ分析**
-   - 取得した情報がCQに回答するのに十分か、LLMに自己評価させる（evidence-gap critic）
-   - 不十分な場合、何が不足しているかを特定させる
-5. **⑤分岐**
-   - 十分 → 回答生成へ
-   - 不十分 → クエリを書き換えて③へ戻る（無限ループ防止のため最大反復回数を設定すること）
-
-### LangGraph実装時の注意点
-- 各反復（retrieval_round）・信頼度スコア（critic_score）・使用トークン数（token_budget_used）をトレースに記録し、LangSmith等で監視できるようにする
-- 反復回数の上限（例: 3〜5回）を設け、上限到達時は「情報不足」であることを明示して回答する設計にする
-- Phase3で作成したマルチエージェント構成（Domain Expert/Manager/Coder/QA）とは別レイヤーであり、混同しないこと。Phase3は「オントロジー自体の生成・検証」、Phase6は「検証済みグラフに対する検索・回答生成」を担う
-
-### 成果物
-- `/agent/planner_node.py`（分解要否判断）
-- `/agent/retrieval_node.py`（ツール動的選択・ハイブリッド検索）
-- `/agent/evidence_gap_node.py`（十分性評価・書き換え指示）
-- `/agent/graph_definition.py`（LangGraphのステートグラフ定義、反復上限を含む）
+**成果物**:
+- `chat/index.html`（AgenticSearch + Naive RAG比較UI、上部ナビ付き）
 
 ---
 
 ## 三層ガバナンスとの対応関係
 
-| ガバナンス層 | 対応するフェーズ | 変更経路 |
+| ガバナンス層 | 対応フェーズ | 変更経路 |
 |---|---|---|
-| 語彙・構造変更（エンジニアのみ） | Phase3のクラス・関係定義、Phase4のGRAPH TYPE定義 | Git/CI/CD経由、PRレビュー |
-| 参照データ（直接CRUD） | Phase4のInstance層（GRAPH TYPE範囲外の柔軟部分） | 直接CRUD、スキーマ検証あり |
-| 業務ルール（承認フロー） | Phase3の制約値（閾値等） | フォームUI＋承認フロー、Phase3-5のレビューUIを流用可 |
+| 語彙・構造変更（エンジニアのみ） | Phase2.2 クラス・関係定義、Phase3.1 GRAPH TYPE定義 | Git/CI/CD経由、PRレビュー |
+| 参照データ（直接CRUD） | Phase3.1 Instance層（スキーマ範囲外の柔軟部分） | 直接CRUD、スキーマ検証あり |
+| 業務ルール（承認フロー） | Phase2.1 CQレビュー、Phase3.2 検証UI | フォームUI＋承認フロー |
 
 ---
 
-## 未検証・要確認事項（実装前に調査すること）
+## 未検証・要確認事項
 
-1. GRAPH TYPEの正式GA時期と、Preview版との構文差分
-2. GRAPH TYPEが値レンジ制約（`sh:minInclusive`相当）をどこまでサポートするか
-3. neosemantics（n10s）の複雑なSHACL制約（closed shape等）のサポート範囲（代替案採用時）
-4. マルチエージェントオントロジー生成における、LLM呼び出しコスト（CQ数・クラス数に応じてスケールするため、事前に試算すること）
-5. Agentic Searchは反復のたびにLLM呼び出しが発生するため、レイテンシとコストが単純なRAGより増加する。全クエリに適用せず、単純な質問は固定パイプライン（Phase5相当）、複雑な質問のみAgentic Search（Phase6）に振り分けるハイブリッド運用を検討すること
-
----
-
-## 参考にした議論の要点（このドキュメントの根拠）
-
-- Ontogenia / CQbyCQ: CQからOWLオントロジーを自動生成するプロンプト手法
-- マルチエージェント構成（Domain Expert/Manager/Coder/QA）による構造品質改善
-- OntoChat: 言語化（verbalization）によるオントロジーレビュー支援
-- neosemantics: Neo4j⇔RDF変換とSHACL検証
-- Neo4j GRAPH TYPE（2026.02 Preview）: プロパティグラフネイティブなスキーマ強制
-- Agentic RAG: クエリ分解・ツールルーティング・エビデンスギャップ分析・反復再検索のLangGraphパターン
-- GraphSearch: グラフ構造知識をAgentic RAGワークフローに統合した多段階探索手法
+1. GRAPH TYPEの正式GA時期とPreview版との構文差分
+2. GRAPH TYPEが値レンジ制約（sh:minInclusive相当）をどこまでサポートするか
+3. マルチエージェントオントロジー生成におけるLLM呼び出しコスト
+4. AgenticSearchのレイテンシ—全クエリに適用せず、単純な質問は固定パイプライン、複雑な質問のみAgenticSearchに振り分けるハイブリッド運用を検討
