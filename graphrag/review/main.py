@@ -49,6 +49,9 @@ class ItemType(str, Enum):
 # ── In-memory review state ──
 reviews_db: list[dict] = []
 
+# ── 3.2 検証結果（cq_id → 検証結果）──
+validation_results: dict = {}
+
 # ── Generated ontology state ──
 generated_ontology = {
     "definition": "",
@@ -71,7 +74,8 @@ def save_state():
     """Persist review items / review history / generated ontology to disk."""
     try:
         with open(STATE_PATH, "w", encoding="utf-8") as f:
-            json.dump({"items": REVIEW_ITEMS, "reviews": reviews_db, "ontology": generated_ontology},
+            json.dump({"items": REVIEW_ITEMS, "reviews": reviews_db, "ontology": generated_ontology,
+                       "validation": validation_results},
                       f, ensure_ascii=False, indent=1)
     except Exception as ex:
         print("save_state failed:", ex)
@@ -88,7 +92,11 @@ def load_state():
         onto = data.get("ontology")
         if isinstance(onto, dict):
             generated_ontology.update(onto)
-        print(f"load_state: {len(REVIEW_ITEMS)} items, {len(reviews_db)} reviews, ontology={generated_ontology.get('status')}")
+        val = data.get("validation")
+        if isinstance(val, dict):
+            validation_results.clear(); validation_results.update(val)
+        print(f"load_state: {len(REVIEW_ITEMS)} items, {len(reviews_db)} reviews, "
+              f"ontology={generated_ontology.get('status')}, validation={len(validation_results)}")
     except Exception as ex:
         print("load_state failed:", ex)
 
@@ -727,6 +735,260 @@ def get_kg_from_neo4j():
         return JSONResponse({"error": f"Neo4j未接続（{uri}）: {ex}", "nodes": [], "edges": []})
 
 
+# ── 3.2 検証: 3.1ナレッジグラフ(Neo4j)を根拠にCQへ回答し、正解(expected_answer)と照合 ──
+# チャットの Agentic Search (graphrag/agent/agent.py) の Planner→Retrieval→Critic→Answer を、
+# 手作りkg.json非依存に一般化し、抽出KG(Neo4j)上で回す。回答は (A)KGのみ / (B)KG+Wiki の2通り。
+
+_GENAI_CACHE = {}
+
+def _genai():
+    """(.env をロードした) genai クライアントと model 名を返す（クライアントはキャッシュ）。"""
+    _load_env_file()
+    if "client" not in _GENAI_CACHE:
+        import google.genai as genai
+        _GENAI_CACHE["genai"] = genai
+        _GENAI_CACHE["client"] = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+    _GENAI_CACHE["model"] = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+    return _GENAI_CACHE["genai"], _GENAI_CACHE["client"], _GENAI_CACHE["model"]
+
+def _llm_json(sys_prompt, user_prompt):
+    genai, client, model = _genai()
+    from google.genai import types
+    r = client.models.generate_content(
+        model=model, contents=f"{sys_prompt}\n\n{user_prompt}",
+        config=types.GenerateContentConfig(response_mime_type="application/json"))
+    return json.loads(r.text)
+
+def _llm_text(sys_prompt, user_prompt):
+    genai, client, model = _genai()
+    r = client.models.generate_content(model=model, contents=f"{sys_prompt}\n\n{user_prompt}")
+    return (r.text or "").strip()
+
+def _get_kg_graph():
+    """3.1の抽出KGを {nodes, edges, source} で返す。Neo4j優先・失敗時は kg_extracted。"""
+    _load_env_file()
+    uri = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+    user = os.environ.get("NEO4J_USER", "neo4j")
+    pw = os.environ.get("NEO4J_PASSWORD", "")
+    if pw:
+        try:
+            import neo4j
+            drv = neo4j.GraphDatabase.driver(uri, auth=(user, pw), connection_timeout=4)
+            drv.verify_connectivity()
+            nodes, edges = [], []
+            with drv.session() as s:
+                for rec in s.run("MATCH (n) RETURN n"):
+                    node = rec["n"]
+                    labels = [l for l in node.labels if l != "Entity"] or ["Node"]
+                    props = dict(node); nid = props.get("id") or node.element_id
+                    nodes.append({"id": nid, "labels": labels, "props": props})
+                for rec in s.run("MATCH (a)-[r]->(b) RETURN a.id AS f, b.id AS t, type(r) AS ty, properties(r) AS props"):
+                    if rec["f"] is None or rec["t"] is None:
+                        continue
+                    edges.append({"from": rec["f"], "to": rec["t"], "type": rec["ty"], "props": dict(rec["props"] or {})})
+            drv.close()
+            if nodes:
+                return {"nodes": nodes, "edges": edges, "source": "neo4j"}
+        except Exception:
+            pass
+    kg = generated_ontology.get("kg_extracted") or {"nodes": [], "edges": []}
+    return {"nodes": kg.get("nodes", []), "edges": kg.get("edges", []), "source": "kg_extracted"}
+
+def _node_name(n):
+    return (n.get("props") or {}).get("name") or n.get("id")
+
+def _kg_indexes(kg):
+    by_id = {n["id"]: n for n in kg["nodes"]}
+    adj = {}
+    for e in kg["edges"]:
+        adj.setdefault(e["from"], []).append(e)
+        adj.setdefault(e["to"], []).append(e)
+    labels = {}
+    for n in kg["nodes"]:
+        for l in (n.get("labels") or ["Node"]):
+            labels.setdefault(l, []).append(_node_name(n))
+    rel_types = sorted({e["type"] for e in kg["edges"]})
+    return by_id, adj, labels, rel_types
+
+def _slugs_from(text):
+    if not text:
+        return []
+    return [t.strip() for t in re.split(r'[,、→\s]+', str(text))
+            if t.strip() and re.match(r'^[A-Za-z0-9][\w-]*$', t.strip())]
+
+def _plan_query(question, labels, rel_types):
+    sys = ("あなたはナレッジグラフ検索エージェントのプランナー。質問に答えるために、与えられたグラフから"
+           "探索の起点にすべきエンティティ名と検索キーワードを選ぶ。"
+           '出力JSON: {"entities":["ノード名"...],"keywords":["語"...],"hops":1}。'
+           "entitiesは下記ノード名から関連するものだけ、keywordsは質問中の要点語（手帳名・等級・制度名・窓口名など）。hopsは1か2。")
+    label_lines = "\n".join(f"- {l}: {', '.join(sorted(set(ns))[:40])}" for l, ns in labels.items())
+    user = f"質問: {question}\n\n【グラフのクラスとノード名】\n{label_lines[:6000]}\n\n【関係型】\n{', '.join(rel_types)}"
+    try:
+        p = _llm_json(sys, user)
+    except Exception:
+        p = {}
+    hops = 1
+    try:
+        hops = min(2, max(1, int(p.get("hops") or 1)))
+    except Exception:
+        hops = 1
+    return (p.get("entities") or []), (p.get("keywords") or []), hops
+
+def _seed_nodes(nodes, entities, keywords):
+    terms = [t.strip().lower() for t in list(entities) + list(keywords) if t and str(t).strip()]
+    seeds = set()
+    for n in nodes:
+        nm = _node_name(n).lower()
+        hay = (nm + " " + " ".join(str(v) for v in (n.get("props") or {}).values())).lower()
+        for t in terms:
+            if t and (t in nm or nm in t or t in hay):
+                seeds.add(n["id"]); break
+    return seeds
+
+def _expand(seeds, adj, hops):
+    visited = set(seeds); frontier = set(seeds)
+    for _ in range(hops):
+        nxt = set()
+        for nid in frontier:
+            for e in adj.get(nid, []):
+                for other in (e["from"], e["to"]):
+                    if other not in visited:
+                        nxt.add(other)
+        visited |= nxt; frontier = nxt
+    return visited
+
+def _subgraph_facts(ids, by_id, edges):
+    ids = set(i for i in ids if i in by_id)
+    fnodes = [{"id": i, "labels": by_id[i].get("labels"), "props": by_id[i].get("props")} for i in ids]
+    fedges = [e for e in edges if e["from"] in ids and e["to"] in ids]
+    return fnodes, fedges
+
+def _load_wiki_pages(slugs):
+    base = os.path.join(HERE, "..", "..")
+    out = {}
+    for slug in slugs:
+        for folder in ("pages", "entities"):
+            fp = os.path.join(base, folder, f"{slug}.md")
+            if os.path.isfile(fp):
+                with open(fp, encoding="utf-8") as f:
+                    c = f.read()
+                c = re.sub(r'^---\n.*?\n---\n', '', c, flags=re.DOTALL)
+                out[slug] = c[:2500]
+                break
+    return out
+
+_ANSWER_SYS_KG = (
+    "あなたは文京区の障害者福祉の案内担当。与えられた【ナレッジグラフの根拠】だけを使って日本語で簡潔に答える。"
+    "根拠に無い金額・等級・電話番号・固有名を創作しない。根拠から答えられない場合は"
+    "『ナレッジグラフからは分かりません』とだけ述べる。")
+_ANSWER_SYS_KGWIKI = (
+    "あなたは文京区の障害者福祉の案内担当。【ナレッジグラフの根拠】と【LLM-Wiki本文】を使って日本語で簡潔に答える。"
+    "両方に無い情報は創作しない。答えられない場合は『分かりません』と述べる。")
+_JUDGE_SYS = (
+    "あなたは回答採点者。質問と『正解』を基準に、2つの回答（A=KGのみ / B=KG+Wiki）を採点する。"
+    "各 verdict は correct / partial / incorrect のいずれか: "
+    "correct=正解の要点を過不足なく含む, partial=一部一致だが不足や軽微な誤り, incorrect=誤りor未回答。理由は簡潔に。"
+    '出力JSON: {"kg":{"verdict":"...","reason":"..."},"kgwiki":{"verdict":"...","reason":"..."}}')
+
+def _run_validation(cq):
+    question = cq.get("title") or ""
+    expected = cq.get("expected_answer") or ""
+    trace = []
+    kg = _get_kg_graph()
+    trace.append({"node": "KG", "txt": f'{kg.get("source")}: {len(kg["nodes"])}ノード / {len(kg["edges"])}エッジ'})
+    by_id, adj, labels, rel_types = _kg_indexes(kg)
+
+    entities, keywords, hops = _plan_query(question, labels, rel_types)
+    trace.append({"node": "Planner(LLM)", "txt": f'entities={entities[:8]} / keywords={keywords[:8]} / hops={hops}'})
+
+    seeds = _seed_nodes(kg["nodes"], entities, keywords)
+    ids = _expand(seeds, adj, hops)
+    fnodes, fedges = _subgraph_facts(ids, by_id, kg["edges"])
+    trace.append({"node": "Retrieval", "txt": f'シード{len(seeds)} → 近傍展開{len(fnodes)}ノード / {len(fedges)}エッジ'})
+
+    if len(fnodes) < 2 and seeds:
+        ids = _expand(seeds, adj, hops + 1)
+        fnodes, fedges = _subgraph_facts(ids, by_id, kg["edges"])
+        trace.append({"node": "Critic(LLM)", "txt": f'根拠不足 → hop拡大で{len(fnodes)}ノード'})
+    else:
+        trace.append({"node": "Critic(LLM)", "txt": "根拠十分 ✓"})
+
+    kg_facts = {"nodes": fnodes, "edges": fedges}
+    facts_json = json.dumps(kg_facts, ensure_ascii=False)[:8000]
+
+    sources = {s for n in fnodes for s in _slugs_from((n.get("props") or {}).get("source"))}
+    cq_docs = [d for d in [s.get("doc") for s in (cq.get("trace") or [])] if d]
+    wiki_slugs = sorted(sources | set(cq_docs))
+
+    try:
+        ans_kg = _llm_text(_ANSWER_SYS_KG, f"質問: {question}\n\n【ナレッジグラフの根拠】\n{facts_json}")
+    except Exception as ex:
+        ans_kg = f"(生成失敗: {ex})"
+
+    wiki = _load_wiki_pages(wiki_slugs)
+    wiki_ctx = "\n\n".join(f"## {k}\n{v}" for k, v in wiki.items())[:9000]
+    try:
+        ans_kgwiki = _llm_text(_ANSWER_SYS_KGWIKI,
+                               f"質問: {question}\n\n【ナレッジグラフの根拠】\n{facts_json}\n\n【LLM-Wiki本文】\n{wiki_ctx}")
+    except Exception as ex:
+        ans_kgwiki = f"(生成失敗: {ex})"
+    trace.append({"node": "Answer(LLM)", "txt": f'KGのみ / KG+Wiki(参照{len(wiki)}ページ) を生成'})
+
+    try:
+        j = _llm_json(_JUDGE_SYS,
+                      f"質問: {question}\n正解: {expected}\n\n回答A(KGのみ): {ans_kg}\n\n回答B(KG+Wiki): {ans_kgwiki}")
+    except Exception as ex:
+        j = {"kg": {"verdict": "error", "reason": str(ex)}, "kgwiki": {"verdict": "error", "reason": str(ex)}}
+    trace.append({"node": "Judge(LLM)", "txt": f'KG={((j.get("kg") or {}).get("verdict"))} / KG+Wiki={((j.get("kgwiki") or {}).get("verdict"))}'})
+
+    return {
+        "cq_id": cq.get("id"), "question": question, "expected": expected, "type": cq.get("type"),
+        "kg": {"answer": ans_kg, **(j.get("kg") or {})},
+        "kgwiki": {"answer": ans_kgwiki, **(j.get("kgwiki") or {})},
+        "entities": [_node_name(by_id[i]) for i in ids if i in by_id][:30],
+        "sources": wiki_slugs, "trace": trace,
+        "run_at": datetime.datetime.now().isoformat(timespec="seconds"),
+    }
+
+def _approved_cqs():
+    return [i for i in REVIEW_ITEMS if i.get("type_cq") == "cq" and i.get("status") == "approved"]
+
+@app.get("/api/validation/cqs")
+def validation_cqs():
+    return JSONResponse([{"id": c.get("id"), "title": c.get("title"),
+                          "expected_answer": c.get("expected_answer"), "type": c.get("type")}
+                         for c in _approved_cqs()])
+
+@app.get("/api/validation/results")
+def validation_get_results():
+    return JSONResponse(validation_results)
+
+@app.post("/api/validation/run/{cq_id}")
+def validation_run_one(cq_id: str):
+    cq = next((i for i in REVIEW_ITEMS if i.get("id") == cq_id and i.get("type_cq") == "cq"), None)
+    if not cq:
+        return JSONResponse({"ok": False, "error": f"CQ {cq_id} が見つかりません"}, status_code=404)
+    try:
+        res = _run_validation(cq)
+    except Exception as ex:
+        return JSONResponse({"ok": False, "error": f"{type(ex).__name__}: {ex}"}, status_code=500)
+    validation_results[cq_id] = res
+    save_state()
+    return JSONResponse({"ok": True, "result": res})
+
+@app.post("/api/validation/run-all")
+def validation_run_all():
+    done, errors = 0, []
+    for cq in _approved_cqs():
+        try:
+            validation_results[cq["id"]] = _run_validation(cq)
+            done += 1
+            save_state()
+        except Exception as ex:
+            errors.append({"cq_id": cq.get("id"), "error": str(ex)})
+    return JSONResponse({"ok": True, "done": done, "errors": errors})
+
+
 # ── Static HTML UI ──
 
 HTML = r"""<!DOCTYPE html>
@@ -779,6 +1041,13 @@ HTML = r"""<!DOCTYPE html>
 <body>
 <div class="topbar">
   <h1>📋 文京区障害者福祉 KG レビュー</h1>
+  <nav>
+    <a data-tab="cq">2.1 CQ</a>
+    <a data-tab="ontology-def">2.2 定義</a>
+    <a data-tab="ontology-graph">オントロジー図</a>
+    <a data-tab="kg">3.1 ナレッジグラフ</a>
+    <a data-tab="validation">3.2 検証</a>
+  </nav>
 </div>
 <div class="content">
 
@@ -864,6 +1133,19 @@ HTML = r"""<!DOCTYPE html>
     <svg id="kg-svg" style="flex:1;background:#fafafa;border:1px solid var(--border);border-radius:8px;overflow:hidden"></svg>
     <div id="kg-node-detail" style="width:340px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;background:var(--card);padding:12px;display:none;font-size:.82rem"></div>
   </div>
+</div>
+
+<div id="panel-validation" class="panel">
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+    <div style="flex:1">
+      <div style="font-size:.95rem;font-weight:600">✅ 3.2 検証（ナレッジグラフでCQに答えられるか）</div>
+      <div style="font-size:.78rem;color:var(--muted)">承認済みCQを、3.1ナレッジグラフを根拠にAIエージェントが回答 → 正解(expected_answer)と照合。<b>KGのみ</b>と<b>KG+Wiki補完</b>の2通りで評価します。</div>
+    </div>
+    <button onclick="runAllValidation()" id="val-runall-btn" style="padding:7px 16px;border:none;border-radius:6px;background:var(--accent);color:#fff;font-weight:600;cursor:pointer;font-size:.82rem">▶ 全件検証</button>
+  </div>
+  <div id="val-progress" style="display:none;font-size:.8rem;margin-bottom:8px;padding:8px 12px;border-radius:6px;border:1px solid var(--border);background:var(--card)"></div>
+  <div id="val-summary"></div>
+  <div id="val-list"></div>
 </div>
 
 </div>
@@ -1012,7 +1294,7 @@ async function clearAllCqs() {
 }
 
 // ── Screen routing (2.1/2.2/2.3 はそれぞれ別ページ/別URL) ──
-const SCREENS = ['cq','ontology-def','ontology-graph','kg'];
+const SCREENS = ['cq','ontology-def','ontology-graph','kg','validation'];
 function currentScreen() {
   const seg = location.pathname.replace(/\/+$/,'').split('/').pop();
   return SCREENS.includes(seg) ? seg : 'cq';
@@ -1032,6 +1314,7 @@ function initScreen() {
   else if (seg === 'ontology-def') renderOntologyDef();
   else if (seg === 'ontology-graph') renderOntologyGraph();
   else if (seg === 'kg') renderKG();
+  else if (seg === 'validation') renderValidation();
 }
 
 // ── CQ management ──
@@ -1471,6 +1754,104 @@ async function renderKG(source) {
   }
 }
 
+// ── 3.2 検証（ナレッジグラフでCQに答えられるか） ──
+function escHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function verdictBadge(v){
+  const m={correct:['✓ 正解','#166534','#dcfce7'],partial:['△ 部分','#854d0e','#fef9c3'],
+           incorrect:['✗ 不正解','#991b1b','#fee2e2'],error:['⚠ エラー','#6b7280','#f3f4f6']};
+  const [t,c,bg]=m[v]||m.error;
+  return `<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:.72rem;font-weight:700;color:${c};background:${bg}">${t}</span>`;
+}
+let VAL_CQS = [];
+async function renderValidation(){
+  await loadWikiIndex();
+  let cqs=[], results={};
+  try{
+    [cqs, results] = await Promise.all([
+      fetch(API+'/api/validation/cqs').then(r=>r.json()),
+      fetch(API+'/api/validation/results').then(r=>r.json())
+    ]);
+  }catch(e){ document.getElementById('val-list').innerHTML='<div class="warnline">⚠ 取得エラー: '+e.message+'</div>'; return; }
+  VAL_CQS = cqs;
+  renderValSummary(results);
+  const list=document.getElementById('val-list');
+  list.innerHTML = cqs.length
+    ? cqs.map(cq=>valCard(cq, results[cq.id])).join('')
+    : '<div class="empty-state" style="padding:30px;text-align:center;color:var(--muted)">承認済みCQがありません。先に「2.1 CQ」で承認してください。</div>';
+}
+function renderValSummary(results){
+  const arr=Object.values(results||{});
+  const tally=(mode)=>{const c={correct:0,partial:0,incorrect:0,error:0};arr.forEach(r=>{const v=(r[mode]||{}).verdict||'error';c[v]=(c[v]||0)+1;});return c;};
+  const total=VAL_CQS.length;
+  const bar=(label,c)=>{
+    const done=c.correct+c.partial+c.incorrect+c.error;
+    return `<div style="flex:1;min-width:230px">
+      <div style="font-size:.8rem;font-weight:600;margin-bottom:5px">${label} <span style="color:var(--muted)">(${done}/${total} 検証済)</span></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;font-size:.78rem;align-items:center">
+        ${verdictBadge('correct')} ${c.correct}${verdictBadge('partial')} ${c.partial}${verdictBadge('incorrect')} ${c.incorrect}${c.error?verdictBadge('error')+' '+c.error:''}
+      </div></div>`;
+  };
+  document.getElementById('val-summary').innerHTML =
+    `<div style="display:flex;gap:24px;flex-wrap:wrap;padding:12px 14px;border:1px solid var(--border);border-radius:8px;background:var(--card);margin-bottom:12px">
+      ${bar('🗄 KGのみ', tally('kg'))}${bar('🗄+📄 KG+Wiki補完', tally('kgwiki'))}</div>`;
+}
+const VAL_TYPE={lookup:'単一参照',multi_hop:'多段探索',aggregation:'集約',constraint:'制約確認',exclusion:'除外条件',compatibility:'併給確認'};
+function valCard(cq, res){
+  const head=`<div class="card-header"><span class="card-id">${cq.id}</span>
+     <span style="font-size:.72rem;color:var(--muted)">${VAL_TYPE[cq.type]||cq.type||''}</span></div>
+     <div class="card-title" style="font-size:.92rem;color:var(--accent);margin:2px 0 4px">❓ ${escHtml(cq.title)}</div>
+     <div style="font-size:.8rem;margin-bottom:8px"><b style="color:var(--ok)">💡 正解:</b> ${cq.expected_answer?escHtml(cq.expected_answer):'<i style="color:var(--muted)">（未設定）</i>'}</div>`;
+  const body = res ? valResultHtml(res)
+    : `<button onclick="runValidation('${cq.id}')" style="padding:6px 12px;border:1px solid var(--accent);border-radius:6px;background:var(--card);color:var(--accent);font-weight:600;cursor:pointer;font-size:.8rem">▶ このCQを検証</button>`;
+  return `<div class="card" id="val-card-${cq.id}">${head}<div id="val-body-${cq.id}">${body}</div></div>`;
+}
+function valResultHtml(res){
+  const col=(label,d)=>`<div style="flex:1;min-width:250px;border:1px solid var(--border);border-radius:8px;padding:9px 11px;background:var(--card)">
+     <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px"><b style="font-size:.78rem">${label}</b> ${verdictBadge((d||{}).verdict)}</div>
+     <div style="font-size:.82rem;white-space:pre-wrap;margin-bottom:6px">${escHtml((d||{}).answer||'')}</div>
+     <div style="font-size:.72rem;color:var(--muted)"><b>判定理由:</b> ${escHtml((d||{}).reason||'')}</div>
+   </div>`;
+  const ents=(res.entities||[]).map(escHtml).join('、');
+  const srcs=(res.sources||[]).map(s=>linkifyRefs(s)).join(' ');
+  const traceHtml=(res.trace||[]).map(t=>`<div>[${escHtml(t.node)}] ${escHtml(t.txt)}</div>`).join('');
+  return `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px">${col('🗄 KGのみ',res.kg)}${col('🗄+📄 KG+Wiki補完',res.kgwiki)}</div>
+    <details style="font-size:.75rem"><summary style="cursor:pointer;color:var(--muted)">検索エンティティ / 参照Wiki / エージェント経路</summary>
+      <div style="margin-top:5px"><b>検索エンティティ(${(res.entities||[]).length}):</b> ${ents||'—'}</div>
+      <div style="margin-top:3px"><b>参照Wiki:</b> ${srcs||'—'}</div>
+      <div style="margin-top:5px;font-family:monospace;font-size:.7rem;color:var(--muted)">${traceHtml}</div>
+      <div style="margin-top:4px;color:var(--muted)">実行: ${escHtml(res.run_at||'')}</div>
+    </details>
+    <div style="margin-top:6px"><button onclick="runValidation('${res.cq_id}')" style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--muted);cursor:pointer;font-size:.76rem">🔄 再検証</button></div>`;
+}
+async function runValidation(cqId){
+  const body=document.getElementById('val-body-'+cqId);
+  if(body) body.innerHTML='<div style="color:var(--muted);font-size:.82rem">⏳ 検証中…（Planner→Retrieval→回答A/B→判定, 15秒程度）</div>';
+  try{
+    const r=await fetch(API+'/api/validation/run/'+cqId,{method:'POST'});
+    const d=await r.json();
+    if(d.ok){ if(body) body.innerHTML=valResultHtml(d.result); await refreshValSummary(); }
+    else{ if(body) body.innerHTML='<div class="warnline">⚠ '+escHtml(d.error||'失敗')+'</div>'+
+          `<div style="margin-top:6px"><button onclick="runValidation('${cqId}')" style="padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--muted);cursor:pointer;font-size:.76rem">🔄 再試行</button></div>`; }
+  }catch(e){ if(body) body.innerHTML='<div class="warnline">⚠ 通信エラー: '+escHtml(e.message)+'</div>'; }
+}
+async function refreshValSummary(){
+  try{ const results=await fetch(API+'/api/validation/results').then(r=>r.json()); renderValSummary(results); }catch(e){}
+}
+async function runAllValidation(){
+  if(!VAL_CQS.length){ return; }
+  const btn=document.getElementById('val-runall-btn'); const prog=document.getElementById('val-progress');
+  const old=btn.textContent; btn.disabled=true; prog.style.display='block';
+  let i=0;
+  for(const cq of VAL_CQS){
+    i++; btn.textContent=`⏳ ${i}/${VAL_CQS.length}`;
+    prog.textContent=`検証中 ${i}/${VAL_CQS.length}: ${cq.id} ${cq.title}`;
+    await runValidation(cq.id);
+  }
+  btn.disabled=false; btn.textContent=old;
+  prog.textContent=`✅ 全${VAL_CQS.length}件の検証が完了しました。`;
+  await refreshValSummary();
+}
+
 initScreen();
 </script>
 </body>
@@ -1482,6 +1863,7 @@ initScreen();
 @app.get("/ontology-def", response_class=HTMLResponse)
 @app.get("/ontology-graph", response_class=HTMLResponse)
 @app.get("/kg", response_class=HTMLResponse)
+@app.get("/validation", response_class=HTMLResponse)
 def index():
     return HTML
 
