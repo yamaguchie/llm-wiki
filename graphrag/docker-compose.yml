@@ -1,0 +1,40 @@
+# Neo4j for the LLM-Wiki GraphRAG demo.
+#
+# Secrets are NOT stored here. The password is read from graphrag/.env
+# (same file the app uses) via ${NEO4J_PASSWORD}. Compose auto-loads the .env
+# sitting next to this file. If NEO4J_PASSWORD is empty/unset, `docker compose up`
+# fails fast with the message below instead of starting an insecure DB.
+#
+# Usage (from the graphrag/ directory):
+#   1) put your password in graphrag/.env :  NEO4J_PASSWORD=...
+#   2) docker compose up -d
+#   3) Browser UI: http://localhost:7474   (user: neo4j)
+#   4) stop:  docker compose down          (data survives in the named volume)
+#      wipe:  docker compose down -v        (deletes all graph data)
+
+services:
+  neo4j:
+    image: neo4j:5.26-community          # 5.x LTS; compatible with the neo4j 5.25 python driver
+    container_name: llm_wiki_neo4j
+    ports:
+      - "7474:7474"                       # HTTP / Neo4j Browser
+      - "7687:7687"                       # Bolt (the app connects here)
+    environment:
+      NEO4J_AUTH: "neo4j/${NEO4J_PASSWORD:?NEO4J_PASSWORD is not set. Add it to graphrag/.env, then re-run.}"
+      NEO4J_server_memory_heap_initial__size: "512m"
+      NEO4J_server_memory_heap_max__size: "1G"
+      NEO4J_server_memory_pagecache_size: "512m"
+    volumes:
+      - neo4j_data:/data                  # graph data persists across restarts
+      - neo4j_logs:/logs
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7474 >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+volumes:
+  neo4j_data:
+  neo4j_logs:
