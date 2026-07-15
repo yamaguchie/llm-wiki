@@ -922,7 +922,7 @@ def generate_ontology():
             kg_prompt = (
                 "あなたはナレッジグラフ構築エージェントです。以下のオントロジー定義からインスタンスデータ（kg.json形式）を生成してください。\n"
                 "出力: {\"nodes\":[{\"id\",\"labels\",\"props\"}],\"edges\":[{\"from\",\"to\",\"type\",\"props\"}]}\n"
-                f"【オントロジー定義】\n{json.dumps(def_result, ensure_ascii=False)[:5000]}\n\n【承認済み全項目】\n{approved_text[:3000]}"
+                f"【オントロジー定義】\n{json.dumps(def_result, ensure_ascii=False)[:18000]}\n\n【承認済み全項目】\n{approved_text[:3000]}"
             )
             kg_result = json.loads(client.models.generate_content(
                 model=model, contents=kg_prompt,
