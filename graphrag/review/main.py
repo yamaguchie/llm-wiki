@@ -713,10 +713,10 @@ def get_kg_from_neo4j():
                 props = dict(node)
                 nid = props.get("id") or node.element_id
                 nodes.append({"id": nid, "labels": labels, "props": props})
-            for rec in s.run("MATCH (a)-[r]->(b) RETURN a.id AS f, b.id AS t, type(r) AS ty"):
+            for rec in s.run("MATCH (a)-[r]->(b) RETURN a.id AS f, b.id AS t, type(r) AS ty, properties(r) AS props"):
                 if rec["f"] is None or rec["t"] is None:
                     continue
-                edges.append({"from": rec["f"], "to": rec["t"], "type": rec["ty"]})
+                edges.append({"from": rec["f"], "to": rec["t"], "type": rec["ty"], "props": dict(rec["props"] or {})})
         drv.close()
         return JSONResponse(content={
             "nodes": nodes, "edges": edges,
@@ -1448,11 +1448,17 @@ async function renderKG(source) {
       const props=(kg.nodes.find(x=>x.id===n.id)||{}).props||{};
       const rows=Object.entries(props).map(([k,v])=>{
         let val=(typeof v==='object')?JSON.stringify(v):v;
-        if(k==='source' && typeof v==='string') val=`<a href="${wikiHref(v)}" target="_blank" class="reflink wiki">${v}</a>`;
+        // source / evidence は複数スラッグ(カンマ・矢印区切り)を含むので個別にリンク化（全体を1リンクにすると404）
+        if((k==='source'||k==='evidence') && typeof v==='string') val=linkifyRefs(v);
         return `<tr><td style="padding:2px 4px;font-weight:600;color:var(--accent);vertical-align:top">${k}</td><td style="padding:2px 4px">${val}</td></tr>`;
       }).join('');
-      const outE=(kg.edges||[]).filter(e=>e.from===n.id).map(e=>`${e.type} → ${e.to}`);
-      const inE=(kg.edges||[]).filter(e=>e.to===n.id).map(e=>`${e.from} → ${e.type}`);
+      const nameOf=(id)=>(nodeById[id]&&nodeById[id].name)||id;
+      const edgeProps=(e)=>{
+        const p=(e.props&&typeof e.props==='object')?Object.entries(e.props):[];
+        return p.length?` <span style="color:var(--muted)">{${p.map(([k,v])=>`${k}: ${typeof v==='object'?JSON.stringify(v):v}`).join(', ')}}</span>`:'';
+      };
+      const outE=(kg.edges||[]).filter(e=>e.from===n.id).map(e=>`<span class="rel-arrow">${e.type}</span> → ${nameOf(e.to)}${edgeProps(e)}`);
+      const inE=(kg.edges||[]).filter(e=>e.to===n.id).map(e=>`${nameOf(e.from)} → <span class="rel-arrow">${e.type}</span>${edgeProps(e)}`);
       detail.innerHTML=`<button class="detail-close" onclick="this.parentElement.style.display='none'">✕</button>
         <h3 style="margin:0 0 2px">${n.name}</h3>
         <div style="font-size:.72rem;color:#888;margin-bottom:6px">${n.label} | ${n.id}</div>
