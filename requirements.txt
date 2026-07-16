@@ -2,6 +2,7 @@ fastapi
 uvicorn
 neo4j
 pdfplumber
+PyMuPDF
 google-genai
 pydantic
 python-multipart

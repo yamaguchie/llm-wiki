@@ -1,16 +1,32 @@
 ---
 page: 36
 ---
-# 障害者総合支援法に基づくサービス
 
-## 概要
-障害者総合支援法に基づき提供されるサービスで、[自立支援給付](jiritsu-shien-kyufu.md)と[地域生活支援事業](chiiki-seikatsu-shien-jigyo.md)があります。
+# 自立支援給付
 
-## 関連概念
-- [障害者総合支援法と児童福祉法のサービス](shogaisha-sogo-shienho-jidofukushiho-service.md)
-- [自立支援給付](jiritsu-shien-kyufu.md)
-- [地域生活支援事業](chiiki-seikatsu-shien-jigyo.md)
-- [申請から利用までの流れ](application-to-usage-flow.md)
+**自立支援給付**は、障害者総合支援法に基づき、障害のある方が自立した日常生活・社会生活を営むことができるよう、全国共通で提供されるサービス等に対する給付制度です。
 
-## 出典
-PDFページ 36
+## 構成
+自立支援給付は、主に以下のカテゴリから構成されます。
+
+1. **介護給付**:
+   * 居宅介護（ホームヘルプ）
+   * 重度訪問介護
+   * 行動援護・同行援護
+   * 短期入所（ショートステイ）など
+2. **訓練等給付**:
+   * 自立訓練（機能訓練・生活訓練）
+   * 就労移行支援（一般就労への移行支援）
+   * 就労継続支援（A型・B型）
+   * 共同生活援助（グループホーム）
+3. **自立支援医療**:
+   * 心身の障害を軽減するための医療費助成。
+
+## 利用手続き
+給付の決定にあたっては、[身体障害者手帳](shantai-shogaisha-techo.md)、[愛の手帳](ai-no-techo.md)、[精神障害者保健福祉手帳](seishin-shogaisha-techo.md)の所持や医師の診断、および必要性の調査等に基づき、[障害福祉課](shogai-fukushi-ka.md)にて支給決定手続きを行います。
+
+## 関連リンク
+* [障害福祉課](shogai-fukushi-ka.md)
+* [身体障害者手帳](shantai-shogaisha-techo.md)
+* [愛の手帳](ai-no-techo.md)
+* [精神障害者保健福祉手帳](seishin-shogaisha-techo.md)

@@ -1,0 +1,187 @@
+{
+ "n_pages": 218,
+ "chapters": [
+  {
+   "chapter_no": 1,
+   "title": "前付（ご利用に当たって、目次等）",
+   "start_page": 1,
+   "end_page": 9,
+   "file": "01-前付（ご利用に当たって、目次等）.txt"
+  },
+  {
+   "chapter_no": 2,
+   "title": "障害程度別対象事業一覧表",
+   "start_page": 10,
+   "end_page": 15,
+   "file": "02-障害程度別対象事業一覧表.txt"
+  },
+  {
+   "chapter_no": 3,
+   "title": "1 相談の窓口",
+   "start_page": 16,
+   "end_page": 32,
+   "file": "03-1-相談の窓口.txt"
+  },
+  {
+   "chapter_no": 4,
+   "title": "2 手帳",
+   "start_page": 33,
+   "end_page": 36,
+   "file": "04-2-手帳.txt"
+  },
+  {
+   "chapter_no": 5,
+   "title": "3 障害者総合支援法と児童福祉法のサービス",
+   "start_page": 37,
+   "end_page": 45,
+   "file": "05-3-障害者総合支援法と児童福祉法のサービス.txt"
+  },
+  {
+   "chapter_no": 6,
+   "title": "4 手当・年金・貸付等",
+   "start_page": 46,
+   "end_page": 57,
+   "file": "06-4-手当・年金・貸付等.txt"
+  },
+  {
+   "chapter_no": 7,
+   "title": "5 医療",
+   "start_page": 58,
+   "end_page": 67,
+   "file": "07-5-医療.txt"
+  },
+  {
+   "chapter_no": 8,
+   "title": "6 福祉用具等の給付",
+   "start_page": 68,
+   "end_page": 82,
+   "file": "08-6-福祉用具等の給付.txt"
+  },
+  {
+   "chapter_no": 9,
+   "title": "7 日常生活の支援",
+   "start_page": 83,
+   "end_page": 93,
+   "file": "09-7-日常生活の支援.txt"
+  },
+  {
+   "chapter_no": 10,
+   "title": "8 災害・緊急時",
+   "start_page": 94,
+   "end_page": 101,
+   "file": "10-8-災害・緊急時.txt"
+  },
+  {
+   "chapter_no": 11,
+   "title": "9 情報支援",
+   "start_page": 102,
+   "end_page": 109,
+   "file": "11-9-情報支援.txt"
+  },
+  {
+   "chapter_no": 12,
+   "title": "10 タクシー・自動車・駐車場・駐輪場",
+   "start_page": 110,
+   "end_page": 115,
+   "file": "12-10-タクシー・自動車・駐車場・駐輪場.txt"
+  },
+  {
+   "chapter_no": 13,
+   "title": "11 各種料金の割引",
+   "start_page": 116,
+   "end_page": 126,
+   "file": "13-11-各種料金の割引.txt"
+  },
+  {
+   "chapter_no": 14,
+   "title": "12 税の軽減",
+   "start_page": 127,
+   "end_page": 132,
+   "file": "14-12-税の軽減.txt"
+  },
+  {
+   "chapter_no": 15,
+   "title": "13 住宅",
+   "start_page": 133,
+   "end_page": 139,
+   "file": "15-13-住宅.txt"
+  },
+  {
+   "chapter_no": 16,
+   "title": "14 障害のある子どものサービス一覧",
+   "start_page": 140,
+   "end_page": 145,
+   "file": "16-14-障害のある子どものサービス一覧.txt"
+  },
+  {
+   "chapter_no": 17,
+   "title": "15 保育園・幼稚園・学校等",
+   "start_page": 146,
+   "end_page": 149,
+   "file": "17-15-保育園・幼稚園・学校等.txt"
+  },
+  {
+   "chapter_no": 18,
+   "title": "16 仕事",
+   "start_page": 150,
+   "end_page": 155,
+   "file": "18-16-仕事.txt"
+  },
+  {
+   "chapter_no": 19,
+   "title": "17 余暇活動の支援",
+   "start_page": 156,
+   "end_page": 164,
+   "file": "19-17-余暇活動の支援.txt"
+  },
+  {
+   "chapter_no": 20,
+   "title": "18 各種訓練・講座",
+   "start_page": 165,
+   "end_page": 166,
+   "file": "20-18-各種訓練・講座.txt"
+  },
+  {
+   "chapter_no": 21,
+   "title": "19 権利擁護",
+   "start_page": 167,
+   "end_page": 172,
+   "file": "21-19-権利擁護.txt"
+  },
+  {
+   "chapter_no": 22,
+   "title": "20 障害の理解促進",
+   "start_page": 173,
+   "end_page": 173,
+   "file": "22-20-障害の理解促進.txt"
+  },
+  {
+   "chapter_no": 23,
+   "title": "21 地域のささえあい",
+   "start_page": 174,
+   "end_page": 177,
+   "file": "23-21-地域のささえあい.txt"
+  },
+  {
+   "chapter_no": 24,
+   "title": "22 施設",
+   "start_page": 178,
+   "end_page": 192,
+   "file": "24-22-施設.txt"
+  },
+  {
+   "chapter_no": 25,
+   "title": "資料（障害程度等級表、疾病一覧等）",
+   "start_page": 193,
+   "end_page": 207,
+   "file": "25-資料（障害程度等級表、疾病一覧等）.txt"
+  },
+  {
+   "chapter_no": 26,
+   "title": "さくいん・その他（ヘルプカード等）",
+   "start_page": 208,
+   "end_page": 218,
+   "file": "26-さくいん・その他（ヘルプカード等）.txt"
+  }
+ ]
+}

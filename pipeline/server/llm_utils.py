@@ -35,7 +35,22 @@ def llm_json(sys_prompt, user_prompt):
         model=model, contents=f"{sys_prompt}\n\n{user_prompt}",
         config=types.GenerateContentConfig(response_mime_type="application/json")
     )
-    return json.loads(resp.text)
+    raw = resp.text.strip()
+    # Strip markdown code fences if present
+    raw = re.sub(r'^```(?:json)?\s*', '', raw)
+    raw = re.sub(r'\s*```$', '', raw)
+    # Try to parse JSON, with fallback
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError as e:
+        # Try stripping trailing commas (common issue)
+        import re as _re2
+        raw_fixed = _re2.sub(r',\s*}', '}', raw)
+        raw_fixed = _re2.sub(r',\s*]', ']', raw_fixed)
+        try:
+            return json.loads(raw_fixed)
+        except:
+            raise e
 
 def llm_text(sys_prompt, user_prompt):
     client, model, types = genai()

@@ -1,0 +1,4312 @@
+{
+ "items": [
+  {
+   "id": "QA01",
+   "title": "18歳未満の児童が「愛の手帳」の新規申請や更新に伴う判定を受けたい場合、どこの機関が業務を行いますか？",
+   "description": "18歳未満の児童が「愛の手帳」の新規申請や更新に伴う判定を受けたい場合、どこの機関が業務を行いますか？",
+   "expected_answer": "文京区児童相談所",
+   "type": "multi_hop",
+   "trace": [
+    {
+     "doc": "ai-no-techo-criteria",
+     "ref": "18歳未満の児童の愛の手帳交付や更新に伴う判定は文京区児童相談所が行うと判定機関が分かれていることが示されている。"
+    },
+    {
+     "doc": "bunkyo-jido-sodanjoshi",
+     "ref": "文京区児童相談所において18歳未満の児童を対象とする愛の手帳の判定等を行うことが明記されている。"
+    }
+   ],
+   "source": "ai-no-techo-criteria",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA02",
+   "title": "18歳以上の知的障害のある方が愛の手帳の判定を受ける専門機関の名称と、そこで行われる身体障害者手帳所持者向けの補装具に関",
+   "description": "18歳以上の知的障害のある方が愛の手帳の判定を受ける専門機関の名称と、そこで行われる身体障害者手帳所持者向けの補装具に関する専門的な支援内容は何か？",
+   "expected_answer": "判定機関は東京都心身障害者福祉センターであり、補装具の処方・判定に関する専門的な支援を行う。",
+   "type": "multi_hop",
+   "trace": [
+    {
+     "doc": "ai-no-techo-criteria",
+     "ref": "18歳以上の判定機関が東京都心身障害者福祉センターであることが示されている。"
+    },
+    {
+     "doc": "tokyoto-shinshin-shougaisha-fukushi-center",
+     "ref": "東京都心身障害者福祉センターが18歳以上の愛の手帳の判定のほか、補装具の処方・判定に関する専門的な支援を行うことが明記されている。"
+    }
+   ],
+   "source": "ai-no-techo-criteria",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA03",
+   "title": "聴覚障害による身体障害者手帳の交付対象外である中等度難聴児向けの補聴器購入費助成を担当する文京区の窓口はどこですか？また",
+   "description": "聴覚障害による身体障害者手帳の交付対象外である中等度難聴児向けの補聴器購入費助成を担当する文京区の窓口はどこですか？また、そこで行われる手帳所持者向けの福祉用具や補装具等の支援内容は何ですか？",
+   "expected_answer": "担当窓口は障害福祉課身体障害者支援係であり、身体障害者手帳所持者を対象に補装具費の支給や日常生活用具の給付を行う。",
+   "type": "multi_hop",
+   "trace": [
+    {
+     "doc": "chutodo-nanchoji-hattatsu-shien-jigyo-hochoki-konyuhi-josei",
+     "ref": "申請受付や相談の担当が障害福祉課身体障害者支援係であることが記載されている。"
+    },
+    {
+     "doc": "shogai-fukushi-ka-shintai-shien-kakari",
+     "ref": "障害福祉課身体障害者支援係において補装具費の支給や日常生活用具の給付などの支援を行っていることが明記されている。"
+    }
+   ],
+   "source": "chutodo-nanchoji-hattatsu-shien-jigyo-hochoki-konyuhi-josei",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA04",
+   "title": "身体障害者自動車改造費助成の対象となる身体障害者の等級は何級ですか？また、その方が自家用車の運転に関して、駐車禁止規制の",
+   "description": "身体障害者自動車改造費助成の対象となる身体障害者の等級は何級ですか？また、その方が自家用車の運転に関して、駐車禁止規制の対象から除外される指定を受ける制度の名称は何ですか？",
+   "expected_answer": "対象等級は1級または2級、制度の名称は駐車禁止の対象除外制度である。",
+   "type": "multi_hop",
+   "trace": [
+    {
+     "doc": "disabled-car-modification-subsidy",
+     "ref": "改造費助成の対象が重度の身体障害者（1級または2級）であること、関連制度として駐車禁止の対象除外があることが記載されている。"
+    },
+    {
+     "doc": "parking-restriction-exemption",
+     "ref": "歩行困難な障害者のために公安委員会が駐車禁止等除外標章を交付し、駐車禁止規制の対象から除外する駐車禁止の対象除外制度が説明されている。"
+    }
+   ],
+   "source": "disabled-car-modification-subsidy",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA05",
+   "title": "視覚障害のある方が点字図書を購入する際にその費用を助成する制度において、給付の対象となる年齢条件と、その申請手続きを担当",
+   "description": "視覚障害のある方が点字図書を購入する際にその費用を助成する制度において、給付の対象となる年齢条件と、その申請手続きを担当している文京区の課はどこですか？",
+   "expected_answer": "対象となる年齢条件は学齢児以上、担当課は障害福祉課である。",
+   "type": "multi_hop",
+   "trace": [
+    {
+     "doc": "braille-book-provision",
+     "ref": "対象条件が視覚障害による手帳所持者かつ「学齢児以上」であること、申請手続きが障害福祉課で受け付けていることが示されている。"
+    },
+    {
+     "doc": "shogai-fukushi-ka",
+     "ref": "障害福祉課が身体障害者手帳等の申請・交付や福祉用具の給付等を統括していることが確認できる。"
+    }
+   ],
+   "source": "braille-book-provision",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA06",
+   "title": "令和6年4月に制定された文京区手話言語条例等に基づき、区役所窓口などで事前の申込みをすることなく、タブレット端末を活用し",
+   "description": "令和6年4月に制定された文京区手話言語条例等に基づき、区役所窓口などで事前の申込みをすることなく、タブレット端末を活用してオンラインで手話通訳ができる支援サービスの名称は何ですか？",
+   "expected_answer": "遠隔手話通訳サービス",
+   "type": "multi_hop",
+   "trace": [
+    {
+     "doc": "bunkyo-sign-language-ordinance",
+     "ref": "意思疎通を支援するための専門人材派遣や、関連サービスとして「遠隔手話通訳サービス」があることが示されている。"
+    },
+    {
+     "doc": "remote-sign-language-interpretation-service",
+     "ref": "遠隔手話通訳サービスは、タブレット端末を活用してオンラインの手話通訳オペレーターを通じて即時に手話での相談や手続きができる仕組みであることが説明されている。"
+    }
+   ],
+   "source": "bunkyo-sign-language-ordinance",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA07",
+   "title": "視覚障害や読書困難者を支援するために、書籍などの印刷物の内容を音声化するボランティアを養成する事業の名称と、そこで作られ",
+   "description": "視覚障害や読書困難者を支援するために、書籍などの印刷物の内容を音声化するボランティアを養成する事業の名称と、そこで作られた音源（音声デイジー版など）を自宅へ無料で届けるサービスの名称は何ですか？",
+   "expected_answer": "ボランティア養成事業は「音訳奉仕員養成」であり、届けるサービスは「点字・声の広報」である。",
+   "type": "multi_hop",
+   "trace": [
+    {
+     "doc": "onyaku-hoshien-yosei",
+     "ref": "読書困難者のために墨字を音声化するボランティアを「音訳奉仕員養成」で育成し、修了後に「点字・声の広報」の音声広報製作等に携わることが記載されている。"
+    },
+    {
+     "doc": "braille-voice-public-relations",
+     "ref": "「点字・声の広報」サービスにより、視覚障害者向けに音声版（デイジー版・CD等）を無料で自宅に届けていることが明記されている。"
+    }
+   ],
+   "source": "onyaku-hoshien-yosei",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA08",
+   "title": "精神障害者都営交通乗車証の交付対象となる手帳は何ですか？また、その手帳の有効期限は交付決定から何年間ですか？",
+   "description": "精神障害者都営交通乗車証の交付対象となる手帳は何ですか？また、その手帳の有効期限は交付決定から何年間ですか？",
+   "expected_answer": "対象となる手帳は精神障害者保健福祉手帳であり、有効期限は2年間である。",
+   "type": "multi_hop",
+   "trace": [
+    {
+     "doc": "mental-disorder-toei-pass",
+     "ref": "都営交通を無料で利用できる乗車証の対象者が「精神障害者保健福祉手帳」の所持者であることが記載されている。"
+    },
+    {
+     "doc": "seishin-shogaisha-hoken-fukushi-techo",
+     "ref": "精神障害者保健福祉手帳の有効期限が交付決定から「2年間」であり、2年ごとの更新が必要であることが記載されている。"
+    }
+   ],
+   "source": "mental-disorder-toei-pass",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA09",
+   "title": "既存の浴室や便所などを障害の特性に合わせて改修するための「住宅設備改善費の助成」を利用するにあたり、工事の進め方で最も注",
+   "description": "既存の浴室や便所などを障害の特性に合わせて改修するための「住宅設備改善費の助成」を利用するにあたり、工事の進め方で最も注意すべき要件は何ですか？また、この制度を統括する窓口はどこですか？",
+   "expected_answer": "工事の着工前に事前申請が必要であること（事後の申請は不可）、統括窓口は障害福祉課である。",
+   "type": "multi_hop",
+   "trace": [
+    {
+     "doc": "jyutaku-setsubi-kaizen-josei",
+     "ref": "工事着工前の事前申請が必要であり、事後申請は助成対象外になること、関連する窓口が障害福祉課であることが記載されている。"
+    },
+    {
+     "doc": "jutaku-setsubi-kaizen",
+     "ref": "住宅設備改善費の助成の具体的な申請窓口が「障害福祉課」であることが明記されている。"
+    }
+   ],
+   "source": "jyutaku-setsubi-kaizen-josei",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA10",
+   "title": "障害福祉サービスを利用する際、本人の意向を踏まえてサービス等利用計画を作成し、定期的な見直し（モニタリング）を行う「計画",
+   "description": "障害福祉サービスを利用する際、本人の意向を踏まえてサービス等利用計画を作成し、定期的な見直し（モニタリング）を行う「計画相談支援」を提供する「相談支援なないろ」のような事業所が、新規利用申請に向けて作成する「計画（案）」の提出先である文京区の課はどこですか？",
+   "expected_answer": "障害福祉課",
+   "type": "multi_hop",
+   "trace": [
+    {
+     "doc": "consultation-support-nanairo",
+     "ref": "サービス等利用計画の作成やモニタリングを行う計画相談支援を提供し、障害福祉課と連携していることが記載されている。"
+    },
+    {
+     "doc": "shogai-fukushi-ka",
+     "ref": "障害福祉課が福祉サービスや自立支援給付の申請受付、支給決定、相談窓口を一元的に行っていることが記載されている。"
+    }
+   ],
+   "source": "consultation-support-nanairo",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA11",
+   "title": "地震発生時の家具転倒を防ぐために、自力設置が困難な高齢者や障害者世帯を対象に行われる「家具転倒防止器具の設置」において、",
+   "description": "地震発生時の家具転倒を防ぐために、自力設置が困難な高齢者や障害者世帯を対象に行われる「家具転倒防止器具の設置」において、助成費用の最大額はいくらですか？また、その申請相談を受け付ける文京区の窓口はどこですか？",
+   "expected_answer": "助成費用の最大額は25,000円であり、申請相談を受け付ける窓口は障害福祉課である。",
+   "type": "multi_hop",
+   "trace": [
+    {
+     "doc": "furniture-tipping-prevention",
+     "ref": "家具転倒防止器具の設置に要する費用として「最大25,000円」まで助成すること、また申請相談を文京区の障害福祉課で受け付けていることが記載されている。"
+    },
+    {
+     "doc": "shogai-fukushi-ka",
+     "ref": "障害福祉課が障害のある方や家族に対する手当、助成、生活支援等を統括している。"
+    }
+   ],
+   "source": "furniture-tipping-prevention",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA12",
+   "title": "受験生チャレンジ支援貸付事業において、実際に対象校（高校・大学等）へ入学した場合に適用される最大の特長は何ですか？また、",
+   "description": "受験生チャレンジ支援貸付事業において、実際に対象校（高校・大学等）へ入学した場合に適用される最大の特長は何ですか？また、この貸付制度の申請・相談窓口となっている社会福祉法人の名称は何ですか？",
+   "expected_answer": "実際に入学した場合に貸付金の返済（償還）義務が免除されること、窓口の社会福祉法人は文京区社会福祉協議会である。",
+   "type": "multi_hop",
+   "trace": [
+    {
+     "doc": "jukensei-challenge-shien",
+     "ref": "対象校に実際に入学した場合に返済（償還）義務が免除されること、窓口が文京区社会福祉協議会であることが記載されている。"
+    },
+    {
+     "doc": "bunkyo-shakyo",
+     "ref": "文京区社会福祉協議会（文京区社協）の主な事業として、低所得者や障害者世帯を対象とする貸付制度等の窓口であることが説明されている。"
+    }
+   ],
+   "source": "jukensei-challenge-shien",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA13",
+   "title": "身体に一定以上の永続的な障害がある方に交付される身体障害者手帳の等級は、最も重い等級から軽い等級まで何段階に区分されてい",
+   "description": "身体に一定以上の永続的な障害がある方に交付される身体障害者手帳の等級は、最も重い等級から軽い等級まで何段階に区分されていますか？また、その新規交付や再交付などの各種手続きを担当する文京区の窓口（係）はどこですか？",
+   "expected_answer": "1級から6級の6段階であり、窓口は障害福祉課身体障害者支援係である。",
+   "type": "multi_hop",
+   "trace": [
+    {
+     "doc": "physical-disability-certificate",
+     "ref": "身体障害者手帳の障害程度により「1級から6級」に区分されることが示され、手続き窓口として「障害福祉課 身体障害者支援係」が記載されている。"
+    },
+    {
+     "doc": "shogai-fukushi-ka-shintai-shien-kakari",
+     "ref": "身体障害者手帳の新規交付申請、再交付、各種記載事項変更手続きなどを総合的に受け付ける部署であることが明記されている。"
+    }
+   ],
+   "source": "physical-disability-certificate",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA14",
+   "title": "認可保育園等での集団生活において特別な配慮を必要とする要配慮児をサポートするために追加配置される職員（加配保育士など）を",
+   "description": "認可保育園等での集団生活において特別な配慮を必要とする要配慮児をサポートするために追加配置される職員（加配保育士など）を規定する、障害児通所支援等の基本となる法律は何ですか？また、この要配慮児保育の相談や利用調整を担当する文京区の課はどこですか？",
+   "expected_answer": "法律は児童福祉法、担当課は幼児保育課である。",
+   "type": "multi_hop",
+   "trace": [
+    {
+     "doc": "hoikuen-yohaioruji-hoiku",
+     "ref": "加配保育士を配置する要配慮児保育が児童福祉法に深く関連すること、入園申請や相談の窓口が幼児保育課であることが示されている。"
+    },
+    {
+     "doc": "yoji-hoiku-ka",
+     "ref": "幼児保育課において幼児教育・保育無償化などの手続きのほか、保育園の入園相談や要配慮児保育の受け入れ相談等を行っていることが記載されている。"
+    }
+   ],
+   "source": "hoikuen-yohaioruji-hoiku",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA15",
+   "title": "障害のある方が、災害や緊急時に周囲に支援を求めるための「ヘルプカード」はどのような窓口で配布されていますか？また、そのカ",
+   "description": "障害のある方が、災害や緊急時に周囲に支援を求めるための「ヘルプカード」はどのような窓口で配布されていますか？また、そのカードと似た役割を持ち、外見からは分からなくても配慮が必要なことを周囲に知らせるために作られた、カバン等に着用する赤地のマークの名称は何ですか？",
+   "expected_answer": "配布窓口は障害福祉課や文京区障害者基幹相談支援センター、赤地のマークの名称はヘルプマークである。",
+   "type": "multi_hop",
+   "trace": [
+    {
+     "doc": "help-card",
+     "ref": "ヘルプカードの配布窓口が「障害福祉課」および「文京区障害者基幹相談支援センター」であること、類似するマークへの言及がある。"
+    },
+    {
+     "doc": "help-mark",
+     "ref": "外見から分からなくても援助を必要としている人が着用する赤地に白のプラスとハートをあしらった「ヘルプマーク」が説明されている。"
+    }
+   ],
+   "source": "help-card",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA16",
+   "title": "日常生活の判断能力に不安がある方向けの「あんしんサポート文京」において、預貯金の出し入れや家賃等の支払い代行を行うサービ",
+   "description": "日常生活の判断能力に不安がある方向けの「あんしんサポート文京」において、預貯金の出し入れや家賃等の支払い代行を行うサービスを何と呼びますか？また、この事業を受託運営している、民間の社会福祉法人の名称は何ですか？",
+   "expected_answer": "日常的金銭管理サービス（日常的金銭管理）、社会福祉法人は文京区社会福祉協議会である。",
+   "type": "multi_hop",
+   "trace": [
+    {
+     "doc": "anshin-support-bunkyo",
+     "ref": "公共料金や家賃の支払い代行を行う「日常的金銭管理サービス」があり、文京区社会福祉協議会が実施していることが記載されている。"
+    },
+    {
+     "doc": "bunkyo-shakyo",
+     "ref": "文京区社会福祉協議会が「あんしんサポート文京」を運営する権利擁護センター（日常生活自立支援事業）を担っていることが明記されている。"
+    }
+   ],
+   "source": "anshin-support-bunkyo",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA17",
+   "title": "18歳以上の身体障害者手帳所持者が、障害を除去・軽減するために特定の温熱、手術などの医療を必要とする場合に、医療費の自己",
+   "description": "18歳以上の身体障害者手帳所持者が、障害を除去・軽減するために特定の温熱、手術などの医療を必要とする場合に、医療費の自己負担分を軽減する制度の名称は何ですか？また、この申請手続きを扱う文京区の窓口はどこですか？",
+   "expected_answer": "制度名称は自立支援医療（更生医療）、窓口は障害福祉課である。",
+   "type": "multi_hop",
+   "trace": [
+    {
+     "doc": "jiritsushien-medical-rehabilitation",
+     "ref": "18歳以上で身体障害者手帳を持つ人を対象とし、自己負担を軽減する「自立支援医療（更生医療）」を説明し、窓口が「障害福祉課」であることを示している。"
+    },
+    {
+     "doc": "shogai-fukushi-ka",
+     "ref": "障害福祉課において、更生医療などの自立支援医療の各種手続きや決定、専門相談を受け付けていることが記載されている。"
+    }
+   ],
+   "source": "jiritsushien-medical-rehabilitation",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA18",
+   "title": "障害を理由とする差別（不当な差別的取扱いや、合理的配慮の不提供）に関する相談を受け付ける文京区の窓口はどこですか？",
+   "description": "障害を理由とする差別（不当な差別的取扱いや、合理的配慮の不提供）に関する相談を受け付ける文京区の窓口はどこですか？",
+   "expected_answer": "障害福祉課、文京区障害者基幹相談支援センター",
+   "type": "lookup",
+   "trace": [
+    {
+     "doc": "act-for-eliminating-discrimination-against-persons-with-disabilities",
+     "ref": "相談窓口として障害福祉課、文京区障害者基幹相談支援センターが指定されている。"
+    }
+   ],
+   "source": "act-for-eliminating-discrimination-against-persons-with-disabilities",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA19",
+   "title": "放課後等デイサービス「ほっこり」を利用するにあたり、障害福祉課障害福祉係に申請して発行してもらう必要がある証書の名称は何",
+   "description": "放課後等デイサービス「ほっこり」を利用するにあたり、障害福祉課障害福祉係に申請して発行してもらう必要がある証書の名称は何ですか？",
+   "expected_answer": "障害児通所受給者証",
+   "type": "constraint",
+   "trace": [
+    {
+     "doc": "afterschool-daycare-hokkori",
+     "ref": "手続きにおいて、障害児通所受給者証を障害福祉課障害福祉係に申請して発行してもらう必要があることが記されている。"
+    }
+   ],
+   "source": "afterschool-daycare-hokkori",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA20",
+   "title": "愛の手帳区分基準において、知的発達の遅れの程度や社会適応力に基づき、障害の程度はいくつの段階（度数）に区分されますか？",
+   "description": "愛の手帳区分基準において、知的発達の遅れの程度や社会適応力に基づき、障害の程度はいくつの段階（度数）に区分されますか？",
+   "expected_answer": "4段階（1度（最重度）、2度（重度）、3度（中度）、4度（軽度））",
+   "type": "lookup",
+   "trace": [
+    {
+     "doc": "ai-no-techo-criteria",
+     "ref": "愛の手帳が「1度（最重度）」「2度（重度）」「3度（中度）」「4度（軽度）」の4段階に区分されることが明記されている。"
+    }
+   ],
+   "source": "ai-no-techo-criteria",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA21",
+   "title": "定期利用制自転車駐車場使用料の減額制度において、障害者手帳等をお持ちの方が定期利用する場合、使用料金はどれくらい減額され",
+   "description": "定期利用制自転車駐車場使用料の減額制度において、障害者手帳等をお持ちの方が定期利用する場合、使用料金はどれくらい減額されますか？",
+   "expected_answer": "定期利用料金の5割（50%）を減額",
+   "type": "lookup",
+   "trace": [
+    {
+     "doc": "bicycle-parking-fee-reduction",
+     "ref": "減額率が「定期利用料金の5割（50%）を減額」と指定されている。"
+    }
+   ],
+   "source": "bicycle-parking-fee-reduction",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA22",
+   "title": "布団乾燥消毒・丸洗いのサービスにおいて、在宅で寝たきりの状態にある障害者が利用できる「乾燥消毒」と「丸洗い」の回数は、そ",
+   "description": "布団乾燥消毒・丸洗いのサービスにおいて、在宅で寝たきりの状態にある障害者が利用できる「乾燥消毒」と「丸洗い」の回数は、それぞれ年間で何回と定められていますか？",
+   "expected_answer": "乾燥消毒は年間9回、丸洗いは年間2回（合計で年間11回）",
+   "type": "constraint",
+   "trace": [
+    {
+     "doc": "futon-drying-disinfection",
+     "ref": "サービス内容において年間11回実施のうち、2回は丸洗い、残り9回は乾燥消毒を行うと明記されている。"
+    }
+   ],
+   "source": "futon-drying-disinfection",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA23",
+   "title": "相続税の軽減において、財産を取得した相続人が一般障害者である場合に、相続税額から差し引くことができる控除額は、1年につき",
+   "description": "相続税の軽減において、財産を取得した相続人が一般障害者である場合に、相続税額から差し引くことができる控除額は、1年につきいくらと定められていますか？",
+   "expected_answer": "1年につき10万円",
+   "type": "constraint",
+   "trace": [
+    {
+     "doc": "inheritance-tax-reduction",
+     "ref": "一般障害者の相続税控除額について「1年につき10万円」と計算式が示されている。"
+    }
+   ],
+   "source": "inheritance-tax-reduction",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA24",
+   "title": "障害者手帳をお持ちの女性区民が骨粗しょう症健康診査を受診する場合、受診費用（自己負担分）は免除され、無料で受診できますか",
+   "description": "障害者手帳をお持ちの女性区民が骨粗しょう症健康診査を受診する場合、受診費用（自己負担分）は免除され、無料で受診できますか？",
+   "expected_answer": "はい、受診費用（自己負担分）は免除され、無料で受診できます。",
+   "type": "lookup",
+   "trace": [
+    {
+     "doc": "osteoporosis-screening-waiver",
+     "ref": "対象となる女性区民に対し「健診受診費用（自己負担分）を免除し、無料で受診できるようにする制度」であると明記されている。"
+    }
+   ],
+   "source": "osteoporosis-screening-waiver",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA25",
+   "title": "写真付きの精神障害者保健福祉手帳をお持ちの方が、東京都内を運行する民営バスを利用する際の運賃割引率はいくらですか？",
+   "description": "写真付きの精神障害者保健福祉手帳をお持ちの方が、東京都内を運行する民営バスを利用する際の運賃割引率はいくらですか？",
+   "expected_answer": "半額（5割引）",
+   "type": "lookup",
+   "trace": [
+    {
+     "doc": "private-bus-discount-mental",
+     "ref": "精神障害者保健福祉手帳による民営バスの割引について「半額（5割引）」と記されている。"
+    }
+   ],
+   "source": "private-bus-discount-mental",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA26",
+   "title": "ケガや身体の障害などの理由で、自ら投票用紙に候補者の氏名等を記入できない場合、投票所の係員が投票の秘密を保持したうえで代",
+   "description": "ケガや身体の障害などの理由で、自ら投票用紙に候補者の氏名等を記入できない場合、投票所の係員が投票の秘密を保持したうえで代わりに代筆する制度を何と呼びますか？",
+   "expected_answer": "代理投票",
+   "type": "lookup",
+   "trace": [
+    {
+     "doc": "proxy-voting",
+     "ref": "投票所の係員が投票の秘密を保持したうえで代筆する「代理投票」制度について書かれている。"
+    }
+   ],
+   "source": "proxy-voting",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA27",
+   "title": "自立支援給付や障害福祉サービスを利用する際の所得区分において、市民税（特別区民税）非課税世帯である「低所得世帯」の負担上",
+   "description": "自立支援給付や障害福祉サービスを利用する際の所得区分において、市民税（特別区民税）非課税世帯である「低所得世帯」の負担上限月額はいくらですか？",
+   "expected_answer": "0円",
+   "type": "lookup",
+   "trace": [
+    {
+     "doc": "riyosha-butan-jogen",
+     "ref": "所得区分と上限月額の目安にて、低所得世帯は「0円」と規定されている。"
+    }
+   ],
+   "source": "riyosha-butan-jogen",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA28",
+   "title": "視覚障害のある方が、事前の申込みなしに、投票所で専用の用紙や点字器を用いて自ら投票できる制度の名称は何ですか？",
+   "description": "視覚障害のある方が、事前の申込みなしに、投票所で専用の用紙や点字器を用いて自ら投票できる制度の名称は何ですか？",
+   "expected_answer": "点字投票",
+   "type": "lookup",
+   "trace": [
+    {
+     "doc": "braille-voting",
+     "ref": "視覚障害のある方が点字を用いて自ら投票する「点字投票」制度について記載されている。"
+    }
+   ],
+   "source": "braille-voting",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA29",
+   "title": "聴覚や発話に困難のある人と聞こえる人を、24時間365日いつでも通訳オペレータが手話や文字、音声を用いて仲介し、双方向で",
+   "description": "聴覚や発話に困難のある人と聞こえる人を、24時間365日いつでも通訳オペレータが手話や文字、音声を用いて仲介し、双方向で通話を可能にするサービスの名称は何ですか？",
+   "expected_answer": "電話リレーサービス",
+   "type": "lookup",
+   "trace": [
+    {
+     "doc": "telephone-relay-service",
+     "ref": "手話や文字を仲介する「電話リレーサービス」について、24時間365日利用可能であることが説明されている。"
+    }
+   ],
+   "source": "telephone-relay-service",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  },
+  {
+   "id": "QA30",
+   "title": "国や東京都が指定する難病にかかっている方を対象に、健康保険を適用した医療費の自己負担分から「自己負担上限月額」を控除した",
+   "description": "国や東京都が指定する難病にかかっている方を対象に、健康保険を適用した医療費の自己負担分から「自己負担上限月額」を控除した額を助成する制度の名称は何ですか？",
+   "expected_answer": "難病（特殊疾病）の医療費助成",
+   "type": "lookup",
+   "trace": [
+    {
+     "doc": "medical-subsidy-intractable-diseases",
+     "ref": "指定難病にかかっている方を対象にした「難病（特殊疾病）の医療費助成」の要件や助成内容が記されている。"
+    }
+   ],
+   "source": "medical-subsidy-intractable-diseases",
+   "source_url": "",
+   "review": "human_required",
+   "type_cq": "cq",
+   "status": "approved",
+   "cq_ids": [],
+   "current_value": "未テスト",
+   "reviewer": "一括承認"
+  }
+ ],
+ "reviews": [
+  {
+   "item_id": "CQ01",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": true,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T08:20:02.476009"
+  },
+  {
+   "item_id": "CQ02",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": true,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T08:20:03.461871"
+  },
+  {
+   "item_id": "CQ03",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": true,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T08:20:06.569799"
+  },
+  {
+   "item_id": "CQ04",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": true,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T08:20:07.695841"
+  },
+  {
+   "item_id": "CQ05",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": true,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T08:20:09.524426"
+  },
+  {
+   "item_id": "CQ06",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": true,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T08:20:10.267493"
+  },
+  {
+   "item_id": "CQ07",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": true,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T08:20:11.476592"
+  },
+  {
+   "item_id": "CQ08",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": true,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T08:20:12.015411"
+  },
+  {
+   "item_id": "CQ10",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": true,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T08:20:13.430108"
+  },
+  {
+   "item_id": "CQ11",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": true,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T08:20:16.086202"
+  },
+  {
+   "item_id": "CQ12",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": true,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T08:20:16.536265"
+  },
+  {
+   "item_id": "CQ15",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": true,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T08:20:18.107140"
+  },
+  {
+   "item_id": "CQ14",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": true,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T08:20:18.953859"
+  },
+  {
+   "item_id": "CQ16",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": true,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T08:20:19.708073"
+  },
+  {
+   "item_id": "CQ17",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": true,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T08:20:20.389990"
+  },
+  {
+   "item_id": "CQ18",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": true,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T08:20:21.890323"
+  },
+  {
+   "item_id": "CQ19",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": true,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T08:20:22.706031"
+  },
+  {
+   "item_id": "CQ20",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": true,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T08:20:23.406681"
+  },
+  {
+   "item_id": "CQ22",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": true,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T08:20:25.208938"
+  },
+  {
+   "item_id": "CQ24",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": true,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T08:20:26.868568"
+  },
+  {
+   "item_id": "CQ25",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": true,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T08:20:27.537678"
+  },
+  {
+   "item_id": "CQ01",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": true,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T08:37:18.504076"
+  },
+  {
+   "item_id": "CQ02",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": true,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T08:37:20.918656"
+  },
+  {
+   "item_id": "CQ03",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": true,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T08:37:21.987057"
+  },
+  {
+   "item_id": "CQ04",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": true,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T08:37:23.882590"
+  },
+  {
+   "item_id": "CQ05",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": true,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T08:37:24.790366"
+  },
+  {
+   "item_id": "CQ01",
+   "reviewer": "anonymous",
+   "comment": "",
+   "approved": false,
+   "revision_requested": false,
+   "timestamp": "2026-07-15T12:37:45.928161"
+  }
+ ],
+ "ontology": {
+  "definition": {
+   "classes": [
+    {
+     "name": "DisabilityCertificate",
+     "label": "障害者手帳",
+     "description": "障害の種類や程度を証明し、各種福祉サービスや手当の受給要件として利用される手帳のクラス。",
+     "evidence": "ai-no-techo",
+     "properties": [
+      {
+       "name": "certificateType",
+       "label": "手帳種別",
+       "type": "string",
+       "required": true
+      },
+      {
+       "name": "degree",
+       "label": "障害の程度・等級",
+       "type": "string",
+       "required": true
+      },
+      {
+       "name": "validPeriod",
+       "label": "有効期限",
+       "type": "string",
+       "required": false
+      },
+      {
+       "name": "targetAge",
+       "label": "対象年齢区分",
+       "type": "string",
+       "required": false
+      }
+     ]
+    },
+    {
+     "name": "AdministrativeOrganization",
+     "label": "行政機関・相談窓口",
+     "description": "福祉サービスの申請受付、審査、判定、および相談対応を担う行政組織。",
+     "evidence": "shogai-fukushi-ka",
+     "properties": [
+      {
+       "name": "organizationName",
+       "label": "組織名",
+       "type": "string",
+       "required": true
+      },
+      {
+       "name": "jurisdiction",
+       "label": "管轄業務",
+       "type": "string",
+       "required": true
+      },
+      {
+       "name": "targetAge",
+       "label": "対象年齢",
+       "type": "string",
+       "required": false
+      }
+     ]
+    },
+    {
+     "name": "WelfareService",
+     "label": "福祉サービス・事業",
+     "description": "視覚障害者、知的障害者、精神障害者等の自立支援や利便性向上のために区や関係機関が実施する事業。",
+     "evidence": "chiiki-seikatsu-shien-jigyo",
+     "properties": [
+      {
+       "name": "serviceName",
+       "label": "サービス名",
+       "type": "string",
+       "required": true
+      },
+      {
+       "name": "subsidyRate",
+       "label": "助成率・割引率",
+       "type": "string",
+       "required": false
+      },
+      {
+       "name": "coPay",
+       "label": "自己負担額",
+       "type": "string",
+       "required": false
+      },
+      {
+       "name": "eligibilityCriteria",
+       "label": "利用対象・要件",
+       "type": "string",
+       "required": false
+      },
+      {
+       "name": "requiredDegree",
+       "label": "必要とされる程度",
+       "type": "string",
+       "required": false
+      },
+      {
+       "name": "targetAge",
+       "label": "対象年齢",
+       "type": "string",
+       "required": false
+      },
+      {
+       "name": "applicationMethod",
+       "label": "申請・利用手続き",
+       "type": "string",
+       "required": false
+      },
+      {
+       "name": "notes",
+       "label": "注意事項",
+       "type": "string",
+       "required": false
+      },
+      {
+       "name": "maxSubsidyAmount",
+       "label": "助成上限額",
+       "type": "integer",
+       "required": false
+      },
+      {
+       "name": "specialFeatures",
+       "label": "特徴",
+       "type": "string",
+       "required": false
+      },
+      {
+       "name": "legalBasis",
+       "label": "根拠法令・枠組み",
+       "type": "string",
+       "required": false
+      },
+      {
+       "name": "designFeatures",
+       "label": "設計・バリアフリー仕様の特徴",
+       "type": "string",
+       "required": false
+      },
+      {
+       "name": "usageLimit",
+       "label": "利用制限",
+       "type": "string",
+       "required": false
+      }
+     ]
+    },
+    {
+     "name": "WelfareAllowance",
+     "label": "福祉手当・給付金",
+     "description": "障害のある方やその保護者の生活の安定と福祉向上のために支給される経済的支援。",
+     "evidence": "shinshin-shogaisha-teate-ku",
+     "properties": [
+      {
+       "name": "allowanceName",
+       "label": "手当名",
+       "type": "string",
+       "required": true
+      },
+      {
+       "name": "amount",
+       "label": "支給額",
+       "type": "string",
+       "required": false
+      },
+      {
+       "name": "incomeLimit",
+       "label": "所得制限有無",
+       "type": "boolean",
+       "required": true
+      }
+     ]
+    },
+    {
+     "name": "WelfareFacility",
+     "label": "福祉施設・センター",
+     "description": "障害者向けの活動、療育、生活指導、短期入所などを提供する物理的施設。",
+     "evidence": "bunkyo-general-welfare-center",
+     "properties": [
+      {
+       "name": "facilityName",
+       "label": "施設名",
+       "type": "string",
+       "required": true
+      },
+      {
+       "name": "address",
+       "label": "所在地",
+       "type": "string",
+       "required": false
+      }
+     ]
+    },
+    {
+     "name": "BeneficiaryCertificate",
+     "label": "受給者証",
+     "description": "福祉サービスや障害児通所支援等の支給決定を受けていることを証明し、サービス利用時に提示する受給者証のクラス。",
+     "evidence": "afterschool-daycare-hokkori",
+     "properties": []
+    },
+    {
+     "name": "IncomeCategory",
+     "label": "所得区分",
+     "description": "世帯の所得水準等に基づいて分類される区分で、利用者負担上限月額等の設定基準となるクラス。",
+     "evidence": "riyosha-butan-jogen",
+     "properties": [
+      {
+       "name": "categoryName",
+       "label": "所得区分名",
+       "type": "string",
+       "required": true
+      },
+      {
+       "name": "copayLimit",
+       "label": "自己負担上限月額",
+       "type": "string",
+       "required": false
+      }
+     ]
+    },
+    {
+     "name": "NonGovernmentalOrganization",
+     "label": "民間団体・事業者",
+     "description": "障害福祉サービスや通所支援等の運営、または地域福祉活動、ボランティア活動等を担う民間企業、社会福祉法人、NPO等の民間団体。",
+     "evidence": "act-for-eliminating-discrimination-against-persons-with-disabilities",
+     "properties": []
+    },
+    {
+     "name": "TaxRelief",
+     "label": "税の減免・控除",
+     "description": "障害者本人やその扶養親族を対象とした所得税、住民税、自動車税、贈与税、相続税などの各種税制上の優遇措置・減免制度のクラス。",
+     "evidence": "shogaisha-kojo",
+     "properties": [
+      {
+       "name": "reliefName",
+       "label": "減免・控除名",
+       "type": "string",
+       "required": true
+      },
+      {
+       "name": "deductionAmount",
+       "label": "控除額・減免額",
+       "type": "string",
+       "required": false
+      },
+      {
+       "name": "eligibilityCriteria",
+       "label": "適用要件",
+       "type": "string",
+       "required": false
+      }
+     ]
+    }
+   ],
+   "relationships": [
+    {
+     "name": "managesService",
+     "label": "サービスを管轄する",
+     "from": "AdministrativeOrganization",
+     "to": "WelfareService",
+     "description": "行政機関が特定の福祉サービスや助成事業の申請受付や管理運営を担当する関係。",
+     "evidence": "shogai-fukushi-ka"
+    },
+    {
+     "name": "requiresCertificate",
+     "label": "手帳を要件とする",
+     "from": "WelfareService",
+     "to": "DisabilityCertificate",
+     "description": "福祉サービスや割引・減免制度を利用する要件として、所定の障害者手帳の提示や所持を要件とする関係。",
+     "evidence": "air-fare-discount"
+    },
+    {
+     "name": "paysAllowance",
+     "label": "手当を支給する",
+     "from": "AdministrativeOrganization",
+     "to": "WelfareAllowance",
+     "description": "行政窓口が認定請求に基づき、対象者に対して手当を決定・支給する関係。",
+     "evidence": "kosodate-shien-ka"
+    },
+    {
+     "name": "locatedIn",
+     "label": "施設内に設置されている",
+     "from": "AdministrativeOrganization",
+     "to": "WelfareFacility",
+     "description": "相談窓口や行政出先機関が、特定の総合福祉センター等の施設に物理的に入居している関係。",
+     "evidence": "bunkyo-general-welfare-center"
+    },
+    {
+     "name": "providesAt",
+     "label": "施設で提供される",
+     "from": "WelfareService",
+     "to": "WelfareFacility",
+     "description": "日中活動支援や短期入所などの福祉サービスが、特定の専門施設を拠点に提供される関係。",
+     "evidence": "bunkyo-welfare-center-edogawabashi"
+    },
+    {
+     "name": "assessesCertificate",
+     "label": "手帳の判定・審査を行う",
+     "from": "AdministrativeOrganization",
+     "to": "DisabilityCertificate",
+     "description": "行政機関が手帳の交付や更新、障害程度の判定や審査を行う関係。",
+     "evidence": "ai-no-techo-criteria"
+    },
+    {
+     "name": "supportsService",
+     "label": "サービスを支援・補完する",
+     "from": "WelfareService",
+     "to": "WelfareService",
+     "description": "特定の福祉サービスが、関連する別のサービスを支援・補完、または並行して提供する関係。",
+     "evidence": "braille-book-provision"
+    },
+    {
+     "name": "operatesService",
+     "label": "サービスを運営・実施する",
+     "from": "NonGovernmentalOrganization",
+     "to": "WelfareService",
+     "description": "民間事業者や社会福祉協議会、ボランティア団体などの民間団体が福祉サービスや事業を運営・実施する関係。",
+     "evidence": "afterschool-daycare-hokkori"
+    },
+    {
+     "name": "managesCertificate",
+     "label": "手帳の窓口業務・管理を行う",
+     "from": "AdministrativeOrganization",
+     "to": "DisabilityCertificate",
+     "description": "行政機関が障害者手帳の内容変更、返還、再交付などの受付や管理を行う関係。",
+     "evidence": "ai-no-techo-criteria"
+    },
+    {
+     "name": "hasSubService",
+     "label": "サブサービス・関連事業を有する",
+     "from": "WelfareService",
+     "to": "WelfareService",
+     "description": "大元の制度や事業の下位に位置する個別のサブサービスや関連事業を有する関係。",
+     "evidence": "after-school-day-service"
+    },
+    {
+     "name": "requiresBeneficiaryCertificate",
+     "label": "受給者証を必要とする",
+     "from": "WelfareService",
+     "to": "BeneficiaryCertificate",
+     "description": "福祉サービスや通所支援等の利用にあたり、支給決定された受給者証の所持を要件とする関係。",
+     "evidence": "afterschool-daycare-hokkori"
+    },
+    {
+     "name": "hasCoPayForIncome",
+     "label": "所得区分に応じた自己負担を有する",
+     "from": "WelfareService",
+     "to": "IncomeCategory",
+     "description": "サービス利用時の自己負担額や上限額が、利用者の所得区分に応じて決定される関係。",
+     "evidence": "riyosha-butan-jogen"
+    },
+    {
+     "name": "requiresCertificateForTax",
+     "label": "手帳を要件とする",
+     "from": "TaxRelief",
+     "to": "DisabilityCertificate",
+     "description": "特定の税制優遇措置や減免制度の適用を受けるにあたり、所定の障害者手帳の提示や所持を要件とする関係。",
+     "evidence": "shogaisha-kojo"
+    },
+    {
+     "name": "providesExpertAssessment",
+     "label": "専門的判定を提供する",
+     "from": "AdministrativeOrganization",
+     "to": "WelfareService",
+     "description": "行政機関や専門判定機関が、福祉サービス等の利用に必要な専門的な判定や審査を実施する関係。",
+     "evidence": "bunkyo-jido-sodanjoshi"
+    }
+   ],
+   "constraints": [
+    {
+     "target_class": "WelfareService",
+     "target_property": "subsidyRate",
+     "target_entity": "BicycleParkingFeeReduction",
+     "description": "定期利用制自転車駐車場使用料の減額における減額率は、定期利用料金の5割（50%）を減額。",
+     "value": "50",
+     "unit": "%",
+     "source": "bicycle-parking-fee-reduction"
+    },
+    {
+     "target_class": "WelfareService",
+     "target_property": "subsidyRate",
+     "target_entity": "ParkingFeeReduction",
+     "description": "障害者手帳等所持者がシビックセンター等の指定駐車場を利用する際の駐車料金減額率は5割（50%）。",
+     "value": "50",
+     "unit": "%",
+     "source": "parking-fee-reduction"
+    },
+    {
+     "target_class": "WelfareService",
+     "target_property": "subsidyRate",
+     "target_entity": "TaxiFareDiscount",
+     "description": "タクシー運賃の割引制度において、障害者手帳を提示した際の乗車運賃割引率は1割（10%割引）。",
+     "value": "10",
+     "unit": "%",
+     "source": "taxi-fare-discount"
+    },
+    {
+     "target_class": "WelfareService",
+     "target_property": "coPay",
+     "target_entity": "BlueBirdPostcardsDistribution",
+     "description": "通常郵便葉書（青い鳥郵便葉書）の無料配布において、対象者1人につき配布される枚数は20枚。",
+     "value": "20",
+     "unit": "枚",
+     "source": "blue-bird-postcards-distribution"
+    },
+    {
+     "target_class": "WelfareAllowance",
+     "target_property": "amount",
+     "target_entity": "JidoIkuseiTeateShogai",
+     "description": "児童育成手当 障害手当（区制度）の支給対象となる児童の年齢上限は20歳未満。",
+     "value": "20",
+     "unit": "歳未満",
+     "source": "jido-ikusei-teate-shogai"
+    },
+    {
+     "target_class": "WelfareService",
+     "target_property": "coPay",
+     "target_entity": "FutonDryingDisinfection",
+     "description": "布団乾燥消毒・丸洗いサービスにおいて、年間11回実施のうち、丸洗いは2回、乾燥消毒は9回実施。",
+     "value": "11",
+     "unit": "回",
+     "source": "futon-drying-disinfection"
+    },
+    {
+     "target_class": "DisabilityCertificate",
+     "target_property": "validPeriod",
+     "target_entity": "MentalDisabilityCertificate",
+     "description": "精神障害者保健福祉手帳の有効期限は2年間（2年ごとの更新申請が必要）。",
+     "value": "2",
+     "unit": "年",
+     "source": "seishin-shogaisha-hoken-fukushi-techo"
+    },
+    {
+     "target_class": "WelfareService",
+     "target_property": "subsidyRate",
+     "target_entity": "FurnitureTippingPrevention",
+     "description": "家具転倒防止器具の設置助成事業における、器具購入・設置費用の区の助成上限額は最大25,000円。",
+     "value": "25000",
+     "unit": "円",
+     "source": "furniture-tipping-prevention"
+    },
+    {
+     "target_class": "WelfareService",
+     "target_property": "subsidyRate",
+     "target_entity": "TollRoadDiscount",
+     "description": "有料道路通行料金の割引における割引率は通行料金の50%（5割）割引。",
+     "value": "50",
+     "unit": "%",
+     "source": "toll-road-discount"
+    },
+    {
+     "target_class": "WelfareAllowance",
+     "target_property": "amount",
+     "target_entity": "JidoIkuseiTeateIkusei",
+     "description": "児童育成手当 育成手当（区制度）の支給対象となる児童の年齢上限は18歳（18歳に達する最初の3月31日まで）。",
+     "value": "18",
+     "unit": "歳",
+     "source": "jido-ikusei-teate-ikusei"
+    }
+   ]
+  },
+  "kg_json": {
+   "meta": {
+    "domain": "bunkyo-disability-welfare",
+    "source_layer": "LLM-Wiki (pages/, entities/)",
+    "content_date": "令和7年5月末現在",
+    "note": "Phase4 成果物。benefit金額/年齢閾値は human_required（ontology.md §制約）。出典は各Serviceの props.src。",
+    "generated": "2026-07-13"
+   },
+   "nodes": [
+    {
+     "id": "cat_allowance",
+     "labels": [
+      "ServiceCategory"
+     ],
+     "props": {
+      "name": "手当年金"
+     }
+    },
+    {
+     "id": "cat_medical",
+     "labels": [
+      "ServiceCategory"
+     ],
+     "props": {
+      "name": "医療"
+     }
+    },
+    {
+     "id": "cat_device",
+     "labels": [
+      "ServiceCategory"
+     ],
+     "props": {
+      "name": "福祉用具"
+     }
+    },
+    {
+     "id": "cat_daily",
+     "labels": [
+      "ServiceCategory"
+     ],
+     "props": {
+      "name": "日常生活"
+     }
+    },
+    {
+     "id": "cat_transport",
+     "labels": [
+      "ServiceCategory"
+     ],
+     "props": {
+      "name": "交通"
+     }
+    },
+    {
+     "id": "cat_rights",
+     "labels": [
+      "ServiceCategory"
+     ],
+     "props": {
+      "name": "権利擁護"
+     }
+    },
+    {
+     "id": "tc_shin",
+     "labels": [
+      "TargetCategory"
+     ],
+     "props": {
+      "code": "身",
+      "name": "身体障害者"
+     }
+    },
+    {
+     "id": "tc_chi",
+     "labels": [
+      "TargetCategory"
+     ],
+     "props": {
+      "code": "知",
+      "name": "知的障害者"
+     }
+    },
+    {
+     "id": "tc_sei",
+     "labels": [
+      "TargetCategory"
+     ],
+     "props": {
+      "code": "精",
+      "name": "精神障害者"
+     }
+    },
+    {
+     "id": "tc_nan",
+     "labels": [
+      "TargetCategory"
+     ],
+     "props": {
+      "code": "難",
+      "name": "難病患者"
+     }
+    },
+    {
+     "id": "tc_ji",
+     "labels": [
+      "TargetCategory"
+     ],
+     "props": {
+      "code": "児",
+      "name": "18歳未満の障害児"
+     }
+    },
+    {
+     "id": "nb_body",
+     "labels": [
+      "Notebook"
+     ],
+     "props": {
+      "name": "身体障害者手帳",
+      "grade_type": "級",
+      "grades": [
+       "1",
+       "2",
+       "3",
+       "4",
+       "5",
+       "6"
+      ]
+     }
+    },
+    {
+     "id": "nb_ai",
+     "labels": [
+      "Notebook"
+     ],
+     "props": {
+      "name": "愛の手帳",
+      "grade_type": "度",
+      "grades": [
+       "1",
+       "2",
+       "3",
+       "4"
+      ]
+     }
+    },
+    {
+     "id": "nb_mental",
+     "labels": [
+      "Notebook"
+     ],
+     "props": {
+      "name": "精神障害者保健福祉手帳",
+      "grade_type": "級",
+      "grades": [
+       "1",
+       "2",
+       "3"
+      ]
+     }
+    },
+    {
+     "id": "nb_medcert",
+     "labels": [
+      "Notebook"
+     ],
+     "props": {
+      "name": "難病医療受給者証等",
+      "grade_type": "—",
+      "grades": []
+     }
+    },
+    {
+     "id": "c_zaitaku",
+     "labels": [
+      "Contact"
+     ],
+     "props": {
+      "dept": "障害福祉課 障害者在宅サービス係",
+      "phone": "03-5803-1212",
+      "fax": "03-5803-1352",
+      "location": "シビックセンター9階北側"
+     }
+    },
+    {
+     "id": "c_shintai",
+     "labels": [
+      "Contact"
+     ],
+     "props": {
+      "dept": "障害福祉課 身体障害者支援係",
+      "phone": "03-5803-1219",
+      "fax": "03-5803-1352",
+      "location": "シビックセンター9階北側"
+     }
+    },
+    {
+     "id": "c_chiteki",
+     "labels": [
+      "Contact"
+     ],
+     "props": {
+      "dept": "障害福祉課 知的障害者支援係",
+      "phone": "03-5803-1214",
+      "fax": "03-5803-1352",
+      "location": "シビックセンター9階北側"
+     }
+    },
+    {
+     "id": "c_fukushi",
+     "labels": [
+      "Contact"
+     ],
+     "props": {
+      "dept": "障害福祉課 障害福祉係",
+      "phone": "03-5803-1211",
+      "fax": "03-5803-1352",
+      "location": "シビックセンター9階北側"
+     }
+    },
+    {
+     "id": "c_yobo",
+     "labels": [
+      "Contact"
+     ],
+     "props": {
+      "dept": "予防対策課 精神保健担当",
+      "phone": "03-5803-1230",
+      "fax": "03-5803-1355",
+      "location": "シビックセンター8階南側"
+     }
+    },
+    {
+     "id": "c_yobo_svc",
+     "labels": [
+      "Contact"
+     ],
+     "props": {
+      "dept": "予防対策課 精神保健担当（サービス申請）",
+      "phone": "03-5803-1847",
+      "fax": "03-5803-1355",
+      "location": "シビックセンター8階南側"
+     }
+    },
+    {
+     "id": "c_kosodate",
+     "labels": [
+      "Contact"
+     ],
+     "props": {
+      "dept": "子育て支援事業コールセンター",
+      "phone": "03-5803-1288",
+      "fax": "03-5803-1345",
+      "location": "シビックセンター5階南側"
+     }
+    },
+    {
+     "id": "c_hoken",
+     "labels": [
+      "Contact"
+     ],
+     "props": {
+      "dept": "保健サービスセンター",
+      "phone": "03-5803-1805",
+      "fax": "03-5803-1371",
+      "location": "シビックセンター3階"
+     }
+    },
+    {
+     "id": "c_kikan",
+     "labels": [
+      "Contact"
+     ],
+     "props": {
+      "dept": "文京区障害者基幹相談支援センター",
+      "phone": "03-5940-2903",
+      "fax": "03-5940-2904",
+      "location": "文京総合福祉センター1階"
+     }
+    },
+    {
+     "id": "c_gyakutai",
+     "labels": [
+      "Contact"
+     ],
+     "props": {
+      "dept": "文京区障害者虐待防止センター（障害福祉課内）",
+      "phone": "03-5803-1818",
+      "fax": "03-5803-1352",
+      "location": "シビックセンター9階北側"
+     }
+    },
+    {
+     "id": "c_yoji",
+     "labels": [
+      "Contact"
+     ],
+     "props": {
+      "dept": "幼児保育課 入園相談係",
+      "phone": "03-5803-1190",
+      "fax": "03-5803-1346",
+      "location": "シビックセンター12階南側"
+     }
+    },
+    {
+     "id": "ref_nanbyo",
+     "labels": [
+      "Reference"
+     ],
+     "props": {
+      "name": "障害者総合支援法の難病患者等対象疾病一覧",
+      "kind": "disease_list",
+      "booklet_page": "199",
+      "detail": "376疾病（令和7年4月改定／うち独自支援29）。国の医療費助成は348疾病に拡大"
+     }
+    },
+    {
+     "id": "ref_income",
+     "labels": [
+      "Reference"
+     ],
+     "props": {
+      "name": "所得制限限度額基準表",
+      "kind": "income_limit",
+      "booklet_page": "204-205"
+     }
+    },
+    {
+     "id": "ref_teate_shippei",
+     "labels": [
+      "Reference"
+     ],
+     "props": {
+      "name": "心身障害者等福祉手当 指定の疾病一覧",
+      "kind": "disease_list",
+      "booklet_page": "201",
+      "detail": "361疾病（令和7年4月改定）"
+     }
+    },
+    {
+     "id": "f_lien",
+     "labels": [
+      "Facility"
+     ],
+     "props": {
+      "name": "リアン文京（地域活動支援センター マイポジション）",
+      "phone": "03-5940-2822",
+      "address": "小日向2-16-15"
+     }
+    },
+    {
+     "id": "f_himawari",
+     "labels": [
+      "Facility"
+     ],
+     "props": {
+      "name": "医療的ケア児支援ルームひまわり",
+      "phone": "03-3814-9511",
+      "address": "本郷1-1-19 元町ウェルネスパーク東館1階"
+     }
+    },
+    {
+     "id": "svc_shinshin_teate",
+     "labels": [
+      "Service",
+      "Allowance"
+     ],
+     "props": {
+      "name": "心身障害者等福祉手当（区制度）",
+      "income_limit": true,
+      "benefit_tiers": [
+       {
+        "criteria": "身体手帳1・2級／愛の手帳1〜3度／脳性麻痺／進行性筋萎縮症",
+        "amount": 15500,
+        "freq": "4・8・12月"
+       },
+       {
+        "criteria": "身体手帳3級／愛の手帳4度",
+        "amount": 13500,
+        "freq": "4・8・12月"
+       },
+       {
+        "criteria": "指定疾病の医療券等を所持",
+        "amount": 15500,
+        "freq": "4・8・12月"
+       }
+      ],
+      "excludes": [
+       "手帳取得または指定難病受給者証申請の年齢が65歳以上",
+       "児童育成手当（障害手当）の受給者",
+       "施設入所者",
+       "本人または扶養義務者の所得が限度額超過"
+      ],
+      "src": {
+       "wiki": "pages/04-allowances-pensions.md",
+       "booklet_p": "44"
+      }
+     }
+    },
+    {
+     "id": "svc_seishin_teate",
+     "labels": [
+      "Service",
+      "Allowance"
+     ],
+     "props": {
+      "name": "精神障害者福祉手当（区制度）",
+      "income_limit": true,
+      "benefit_tiers": [
+       {
+        "criteria": "精神障害者保健福祉手帳1級",
+        "amount": 10000,
+        "freq": "—"
+       }
+      ],
+      "excludes": [
+       "1級となった年齢が65歳以上",
+       "心身障害者等福祉手当の受給者",
+       "児童育成手当（障害手当）の受給者",
+       "施設入所者",
+       "所得超過"
+      ],
+      "src": {
+       "wiki": "pages/04-allowances-pensions.md",
+       "booklet_p": "45"
+      }
+     }
+    },
+    {
+     "id": "svc_tokubetsu_shogaisha",
+     "labels": [
+      "Service",
+      "Allowance"
+     ],
+     "props": {
+      "name": "特別障害者手当（国制度）",
+      "income_limit": true,
+      "benefit_tiers": [
+       {
+        "criteria": "20歳以上・著しく重度で常時特別な介護を要する",
+        "amount": 29590,
+        "freq": "5・8・11・2月"
+       }
+      ],
+      "excludes": [
+       "施設入所者",
+       "3か月を超える入院",
+       "所得超過"
+      ],
+      "src": {
+       "wiki": "pages/04-allowances-pensions.md",
+       "booklet_p": "46"
+      }
+     }
+    },
+    {
+     "id": "svc_shogaiji_teate",
+     "labels": [
+      "Service",
+      "Allowance"
+     ],
+     "props": {
+      "name": "障害児福祉手当（国制度）",
+      "income_limit": true,
+      "age_range": "20歳未満",
+      "benefit_tiers": [
+       {
+        "criteria": "20歳未満・重度で常時介護を要する",
+        "amount": 16100,
+        "freq": "5・8・11・2月"
+       }
+      ],
+      "excludes": [
+       "施設入所者",
+       "障害を理由とする年金受給",
+       "所得超過"
+      ],
+      "src": {
+       "wiki": "pages/04-allowances-pensions.md",
+       "booklet_p": "47"
+      }
+     }
+    },
+    {
+     "id": "svc_judo_shinshin",
+     "labels": [
+      "Service",
+      "Allowance"
+     ],
+     "props": {
+      "name": "重度心身障害者手当（都制度）",
+      "income_limit": true,
+      "benefit_tiers": [
+       {
+        "criteria": "常時複雑な介護を要する重度心身障害",
+        "amount": 60000,
+        "freq": "—"
+       }
+      ],
+      "excludes": [
+       "新規申請時に65歳以上",
+       "施設入所者",
+       "3か月を超える入院",
+       "所得超過"
+      ],
+      "src": {
+       "wiki": "pages/04-allowances-pensions.md",
+       "booklet_p": "48"
+      }
+     }
+    },
+    {
+     "id": "svc_tokubetsu_jido",
+     "labels": [
+      "Service",
+      "Allowance"
+     ],
+     "props": {
+      "name": "特別児童扶養手当（国制度）",
+      "income_limit": true,
+      "age_range": "20歳未満の子",
+      "benefit_tiers": [
+       {
+        "criteria": "1級",
+        "amount": 56800,
+        "freq": "—"
+       },
+       {
+        "criteria": "2級",
+        "amount": 37830,
+        "freq": "—"
+       }
+      ],
+      "src": {
+       "wiki": "pages/04-allowances-pensions.md",
+       "booklet_p": "48"
+      }
+     }
+    },
+    {
+     "id": "svc_jido_ikusei",
+     "labels": [
+      "Service",
+      "Allowance"
+     ],
+     "props": {
+      "name": "児童育成手当（障害手当・区制度）",
+      "income_limit": true,
+      "age_range": "20歳未満の子",
+      "benefit_tiers": [
+       {
+        "criteria": "身体1・2級／愛の手帳1〜3度／脳性麻痺／進行性筋萎縮症",
+        "amount": 15500,
+        "freq": "—"
+       }
+      ],
+      "src": {
+       "wiki": "pages/04-allowances-pensions.md",
+       "booklet_p": "50"
+      }
+     }
+    },
+    {
+     "id": "svc_marusho",
+     "labels": [
+      "Service",
+      "MedicalAid"
+     ],
+     "props": {
+      "name": "心身障害者医療費助成（マル障）",
+      "desc": "病院や薬局での医療費（保険診療の自己負担分）が軽くなる・無料になる助成。通院や入院の窓口負担を減らす",
+      "income_limit": true,
+      "benefit_tiers": [
+       {
+        "criteria": "医療保険の自己負担分から一部負担金を控除した額を助成",
+        "amount": "自己負担軽減",
+        "freq": "—"
+       }
+      ],
+      "note": "身体3級は内部障害のみ対象",
+      "src": {
+       "wiki": "pages/05-medical.md",
+       "booklet_p": "56"
+      }
+     }
+    },
+    {
+     "id": "svc_kosei_iryo",
+     "labels": [
+      "Service",
+      "MedicalAid"
+     ],
+     "props": {
+      "name": "自立支援医療（更生医療）",
+      "desc": "身体の障害を軽くしたり治したり進行を防ぐ手術などの医療費の自己負担を軽くする",
+      "income_limit": true,
+      "age_range": "18歳以上",
+      "benefit_tiers": [
+       {
+        "criteria": "障害を軽減する手術等の医療費本人負担を軽減",
+        "amount": "負担軽減",
+        "freq": "—"
+       }
+      ],
+      "src": {
+       "wiki": "pages/05-medical.md",
+       "booklet_p": "57"
+      }
+     }
+    },
+    {
+     "id": "svc_seishin_tsuin",
+     "labels": [
+      "Service",
+      "MedicalAid"
+     ],
+     "props": {
+      "name": "自立支援医療（精神通院医療）",
+      "desc": "うつ病・統合失調症・てんかん・不安障害などの精神疾患で通院する際の医療費の自己負担を軽くする（原則1割）",
+      "income_limit": false,
+      "benefit_tiers": [
+       {
+        "criteria": "精神疾患の通院医療費",
+        "amount": "原則1割（非課税世帯は無料）",
+        "freq": "—"
+       }
+      ],
+      "src": {
+       "wiki": "pages/05-medical.md",
+       "booklet_p": "58"
+      }
+     }
+    },
+    {
+     "id": "svc_nanbyo_iryo",
+     "labels": [
+      "Service",
+      "MedicalAid"
+     ],
+     "props": {
+      "name": "難病（特殊疾病）の医療費助成",
+      "income_limit": false,
+      "benefit_tiers": [
+       {
+        "criteria": "認定疾病の医療費から一部自己負担額を控除",
+        "amount": "負担軽減",
+        "freq": "—"
+       }
+      ],
+      "note": "令和7年4月から国の助成対象が348疾病に拡大",
+      "src": {
+       "wiki": "pages/05-medical.md",
+       "booklet_p": "59"
+      }
+     }
+    },
+    {
+     "id": "svc_hosougu",
+     "labels": [
+      "Service",
+      "AssistiveDevice"
+     ],
+     "props": {
+      "name": "補装具費の支給",
+      "desc": "義手・義足・装具・車椅子・電動車椅子・歩行器・歩行補助つえ・補聴器・眼鏡・重度障害者用意思伝達装置など、身体機能を補う用具を作り直す・修理する・購入する費用の補助",
+      "income_limit": true,
+      "benefit_tiers": [
+       {
+        "criteria": "基準額の1割負担（超過分は自己負担）",
+        "amount": "基準額×0.1",
+        "freq": "—"
+       }
+      ],
+      "src": {
+       "wiki": "pages/06-assistive-devices.md",
+       "booklet_p": "66"
+      }
+     }
+    },
+    {
+     "id": "svc_nichijo_yogu",
+     "labels": [
+      "Service",
+      "AssistiveDevice"
+     ],
+     "props": {
+      "name": "日常生活用具の給付",
+      "desc": "電気式たん吸引器・ネブライザー・紙おむつ・ストマ用装具・点字器・拡大読書器・特殊寝台・入浴補助用具・火災警報器など、在宅の暮らしを助ける用具の給付",
+      "income_limit": false,
+      "benefit_tiers": [
+       {
+        "criteria": "基準額の1割（ストマ用装具・紙おむつは負担なし）",
+        "amount": "基準額×0.1",
+        "freq": "—"
+       }
+      ],
+      "src": {
+       "wiki": "pages/06-assistive-devices.md",
+       "booklet_p": "67"
+      }
+     }
+    },
+    {
+     "id": "svc_kamiomutsu",
+     "labels": [
+      "Service",
+      "AssistiveDevice"
+     ],
+     "props": {
+      "name": "心身障害者・児紙おむつ支給事業",
+      "income_limit": false,
+      "age_range": "4〜64歳",
+      "benefit_tiers": [
+       {
+        "criteria": "月額上限",
+        "amount": 6500,
+        "freq": "月"
+       }
+      ],
+      "src": {
+       "wiki": "pages/06-assistive-devices.md",
+       "booklet_p": "77"
+      }
+     }
+    },
+    {
+     "id": "svc_hojoken",
+     "labels": [
+      "Service",
+      "AssistiveDevice"
+     ],
+     "props": {
+      "name": "補助犬の給付",
+      "income_limit": true,
+      "age_range": "18歳以上・都内在住",
+      "benefit_tiers": [
+       {
+        "criteria": "盲導犬=視覚1級／聴導犬=聴覚2級を無償給付",
+        "amount": "無償",
+        "freq": "—"
+       }
+      ],
+      "src": {
+       "wiki": "pages/06-assistive-devices.md",
+       "booklet_p": "80"
+      }
+     }
+    },
+    {
+     "id": "svc_ido_shien",
+     "labels": [
+      "Service"
+     ],
+     "props": {
+      "name": "障害者・児移動支援事業",
+      "desc": "買い物・通院・余暇などの外出やおでかけに付き添うガイドヘルパーによる移動の介助・支援",
+      "income_limit": false,
+      "free_hours_per_month": 36,
+      "benefit_tiers": [
+       {
+        "criteria": "月36時間まで利用者負担なし（同行援護も同様）",
+        "amount": 0,
+        "freq": "月"
+       }
+      ],
+      "src": {
+       "wiki": "pages/07-daily-life.md",
+       "booklet_p": "82"
+      }
+     }
+    },
+    {
+     "id": "svc_respite",
+     "labels": [
+      "Service"
+     ],
+     "props": {
+      "name": "医療的ケア児在宅レスパイト事業",
+      "income_limit": false,
+      "medical_care_child": true,
+      "age_range": "〜18歳（到達後最初の3/31まで）",
+      "benefit_tiers": [
+       {
+        "criteria": "看護師等を派遣、年288時間上限",
+        "amount": "住民税課税状況で認定",
+        "freq": "—"
+       }
+      ],
+      "src": {
+       "wiki": "pages/07-daily-life.md",
+       "booklet_p": "85"
+      }
+     }
+    },
+    {
+     "id": "svc_shakai_taiken",
+     "labels": [
+      "Service"
+     ],
+     "props": {
+      "name": "医療的ケア児の社会体験プログラム",
+      "income_limit": false,
+      "medical_care_child": true,
+      "age_range": "未就学（1〜6歳）",
+      "benefit_tiers": [
+       {
+        "criteria": "リアン文京で実施、週2回まで",
+        "amount": 0,
+        "freq": "—"
+       }
+      ],
+      "src": {
+       "wiki": "pages/07-daily-life.md",
+       "booklet_p": "85"
+      }
+     }
+    },
+    {
+     "id": "svc_himawari",
+     "labels": [
+      "Service"
+     ],
+     "props": {
+      "name": "医療的ケア児支援ルームひまわり",
+      "income_limit": false,
+      "medical_care_child": true,
+      "age_range": "1歳〜小学3年生",
+      "benefit_tiers": [
+       {
+        "criteria": "送迎あり、無料",
+        "amount": 0,
+        "freq": "—"
+       }
+      ],
+      "src": {
+       "wiki": "pages/07-daily-life.md",
+       "booklet_p": "86"
+      }
+     }
+    },
+    {
+     "id": "svc_kyotaku_hoiku",
+     "labels": [
+      "Service"
+     ],
+     "props": {
+      "name": "居宅訪問型保育事業",
+      "income_limit": false,
+      "medical_care_child": true,
+      "age_range": "1歳〜未就学（0歳要相談）",
+      "benefit_tiers": [
+       {
+        "criteria": "家庭で1対1の保育",
+        "amount": "—",
+        "freq": "—"
+       }
+      ],
+      "src": {
+       "wiki": "pages/07-daily-life.md",
+       "booklet_p": "87"
+      }
+     }
+    },
+    {
+     "id": "svc_fukushi_taxi",
+     "labels": [
+      "Service",
+      "TransportBenefit"
+     ],
+     "props": {
+      "name": "福祉タクシー・自動車燃料費助成",
+      "desc": "外出のためのタクシー券の交付、または自家用車のガソリン・燃料代の助成（選択制）",
+      "income_limit": true,
+      "benefit_tiers": [
+       {
+        "criteria": "福祉タクシー券または燃料費助成（選択制）",
+        "amount": "月額4,100円分",
+        "freq": "月"
+       }
+      ],
+      "note": "身体は部位・等級条件あり（視覚1・2級／下肢体幹1〜3級／内部1・2級／移動1・2級／平衡3級 等）。愛の手帳1・2度／精神1級／スモン等も対象",
+      "src": {
+       "wiki": "pages/10-taxi-car-parking.md",
+       "booklet_p": "108"
+      }
+     }
+    },
+    {
+     "id": "svc_toei_free",
+     "labels": [
+      "Service",
+      "TransportBenefit"
+     ],
+     "props": {
+      "name": "都営交通の無料乗車券",
+      "income_limit": false,
+      "benefit_tiers": [
+       {
+        "criteria": "都電・都バス・都営地下鉄・日暮里舎人ライナーが無料",
+        "amount": "無料",
+        "freq": "—"
+       }
+      ],
+      "note": "精神は精神障害者都営交通乗車証（別）。70歳以上のシルバーパスと併用不可",
+      "src": {
+       "wiki": "pages/11-fare-discounts.md",
+       "booklet_p": "115"
+      }
+     }
+    },
+    {
+     "id": "svc_yuryo_road",
+     "labels": [
+      "Service",
+      "TransportBenefit"
+     ],
+     "props": {
+      "name": "有料道路通行料金の割引",
+      "income_limit": false,
+      "benefit_tiers": [
+       {
+        "criteria": "通常料金の50%割引",
+        "amount": "50%割引",
+        "freq": "—"
+       }
+      ],
+      "note": "自分で運転=第1種・第2種身体障害者／介護者運転=第1種身体・第1種知的",
+      "src": {
+       "wiki": "pages/11-fare-discounts.md",
+       "booklet_p": "118"
+      }
+     }
+    },
+    {
+     "id": "svc_taxi_wari",
+     "labels": [
+      "Service",
+      "TransportBenefit"
+     ],
+     "props": {
+      "name": "タクシー運賃の割引",
+      "income_limit": false,
+      "benefit_tiers": [
+       {
+        "criteria": "手帳の写真提示で運賃1割引",
+        "amount": "10%割引",
+        "freq": "—"
+       }
+      ],
+      "src": {
+       "wiki": "pages/11-fare-discounts.md",
+       "booklet_p": "120"
+      }
+     }
+    },
+    {
+     "id": "svc_gyakutai",
+     "labels": [
+      "Service"
+     ],
+     "props": {
+      "name": "障害者虐待の防止（通報・相談）",
+      "desc": "たたく・叩く・殴る（暴力）・どなる・暴言・世話を放棄する（ネグレクト）・年金やお金を勝手に使うなどの障害者虐待を見かけた・気づいたときの通報・相談先",
+      "income_limit": false,
+      "benefit_tiers": [
+       {
+        "criteria": "通報を受け事実確認・支援。気づいた人に通報義務（匿名可）",
+        "amount": "—",
+        "freq": "—"
+       }
+      ],
+      "src": {
+       "wiki": "pages/19-rights-advocacy.md",
+       "booklet_p": "168"
+      }
+     }
+    }
+   ],
+   "edges": [
+    {
+     "from": "svc_shinshin_teate",
+     "type": "HAS_CATEGORY",
+     "to": "cat_allowance"
+    },
+    {
+     "from": "svc_seishin_teate",
+     "type": "HAS_CATEGORY",
+     "to": "cat_allowance"
+    },
+    {
+     "from": "svc_tokubetsu_shogaisha",
+     "type": "HAS_CATEGORY",
+     "to": "cat_allowance"
+    },
+    {
+     "from": "svc_shogaiji_teate",
+     "type": "HAS_CATEGORY",
+     "to": "cat_allowance"
+    },
+    {
+     "from": "svc_judo_shinshin",
+     "type": "HAS_CATEGORY",
+     "to": "cat_allowance"
+    },
+    {
+     "from": "svc_tokubetsu_jido",
+     "type": "HAS_CATEGORY",
+     "to": "cat_allowance"
+    },
+    {
+     "from": "svc_jido_ikusei",
+     "type": "HAS_CATEGORY",
+     "to": "cat_allowance"
+    },
+    {
+     "from": "svc_marusho",
+     "type": "HAS_CATEGORY",
+     "to": "cat_medical"
+    },
+    {
+     "from": "svc_kosei_iryo",
+     "type": "HAS_CATEGORY",
+     "to": "cat_medical"
+    },
+    {
+     "from": "svc_seishin_tsuin",
+     "type": "HAS_CATEGORY",
+     "to": "cat_medical"
+    },
+    {
+     "from": "svc_nanbyo_iryo",
+     "type": "HAS_CATEGORY",
+     "to": "cat_medical"
+    },
+    {
+     "from": "svc_hosougu",
+     "type": "HAS_CATEGORY",
+     "to": "cat_device"
+    },
+    {
+     "from": "svc_nichijo_yogu",
+     "type": "HAS_CATEGORY",
+     "to": "cat_device"
+    },
+    {
+     "from": "svc_kamiomutsu",
+     "type": "HAS_CATEGORY",
+     "to": "cat_device"
+    },
+    {
+     "from": "svc_hojoken",
+     "type": "HAS_CATEGORY",
+     "to": "cat_device"
+    },
+    {
+     "from": "svc_ido_shien",
+     "type": "HAS_CATEGORY",
+     "to": "cat_daily"
+    },
+    {
+     "from": "svc_respite",
+     "type": "HAS_CATEGORY",
+     "to": "cat_daily"
+    },
+    {
+     "from": "svc_shakai_taiken",
+     "type": "HAS_CATEGORY",
+     "to": "cat_daily"
+    },
+    {
+     "from": "svc_himawari",
+     "type": "HAS_CATEGORY",
+     "to": "cat_daily"
+    },
+    {
+     "from": "svc_kyotaku_hoiku",
+     "type": "HAS_CATEGORY",
+     "to": "cat_daily"
+    },
+    {
+     "from": "svc_fukushi_taxi",
+     "type": "HAS_CATEGORY",
+     "to": "cat_transport"
+    },
+    {
+     "from": "svc_toei_free",
+     "type": "HAS_CATEGORY",
+     "to": "cat_transport"
+    },
+    {
+     "from": "svc_yuryo_road",
+     "type": "HAS_CATEGORY",
+     "to": "cat_transport"
+    },
+    {
+     "from": "svc_taxi_wari",
+     "type": "HAS_CATEGORY",
+     "to": "cat_transport"
+    },
+    {
+     "from": "svc_gyakutai",
+     "type": "HAS_CATEGORY",
+     "to": "cat_rights"
+    },
+    {
+     "from": "svc_shinshin_teate",
+     "type": "TARGETS",
+     "to": "tc_shin"
+    },
+    {
+     "from": "svc_shinshin_teate",
+     "type": "TARGETS",
+     "to": "tc_chi"
+    },
+    {
+     "from": "svc_shinshin_teate",
+     "type": "TARGETS",
+     "to": "tc_nan"
+    },
+    {
+     "from": "svc_shinshin_teate",
+     "type": "TARGETS",
+     "to": "tc_ji"
+    },
+    {
+     "from": "svc_seishin_teate",
+     "type": "TARGETS",
+     "to": "tc_sei"
+    },
+    {
+     "from": "svc_tokubetsu_shogaisha",
+     "type": "TARGETS",
+     "to": "tc_shin"
+    },
+    {
+     "from": "svc_tokubetsu_shogaisha",
+     "type": "TARGETS",
+     "to": "tc_chi"
+    },
+    {
+     "from": "svc_tokubetsu_shogaisha",
+     "type": "TARGETS",
+     "to": "tc_sei"
+    },
+    {
+     "from": "svc_shogaiji_teate",
+     "type": "TARGETS",
+     "to": "tc_shin"
+    },
+    {
+     "from": "svc_shogaiji_teate",
+     "type": "TARGETS",
+     "to": "tc_chi"
+    },
+    {
+     "from": "svc_shogaiji_teate",
+     "type": "TARGETS",
+     "to": "tc_sei"
+    },
+    {
+     "from": "svc_shogaiji_teate",
+     "type": "TARGETS",
+     "to": "tc_ji"
+    },
+    {
+     "from": "svc_judo_shinshin",
+     "type": "TARGETS",
+     "to": "tc_shin"
+    },
+    {
+     "from": "svc_judo_shinshin",
+     "type": "TARGETS",
+     "to": "tc_chi"
+    },
+    {
+     "from": "svc_judo_shinshin",
+     "type": "TARGETS",
+     "to": "tc_ji"
+    },
+    {
+     "from": "svc_tokubetsu_jido",
+     "type": "TARGETS",
+     "to": "tc_shin"
+    },
+    {
+     "from": "svc_tokubetsu_jido",
+     "type": "TARGETS",
+     "to": "tc_chi"
+    },
+    {
+     "from": "svc_tokubetsu_jido",
+     "type": "TARGETS",
+     "to": "tc_sei"
+    },
+    {
+     "from": "svc_tokubetsu_jido",
+     "type": "TARGETS",
+     "to": "tc_ji"
+    },
+    {
+     "from": "svc_jido_ikusei",
+     "type": "TARGETS",
+     "to": "tc_shin"
+    },
+    {
+     "from": "svc_jido_ikusei",
+     "type": "TARGETS",
+     "to": "tc_chi"
+    },
+    {
+     "from": "svc_jido_ikusei",
+     "type": "TARGETS",
+     "to": "tc_ji"
+    },
+    {
+     "from": "svc_marusho",
+     "type": "TARGETS",
+     "to": "tc_shin"
+    },
+    {
+     "from": "svc_marusho",
+     "type": "TARGETS",
+     "to": "tc_chi"
+    },
+    {
+     "from": "svc_marusho",
+     "type": "TARGETS",
+     "to": "tc_nan"
+    },
+    {
+     "from": "svc_marusho",
+     "type": "TARGETS",
+     "to": "tc_ji"
+    },
+    {
+     "from": "svc_kosei_iryo",
+     "type": "TARGETS",
+     "to": "tc_shin"
+    },
+    {
+     "from": "svc_seishin_tsuin",
+     "type": "TARGETS",
+     "to": "tc_sei"
+    },
+    {
+     "from": "svc_seishin_tsuin",
+     "type": "TARGETS",
+     "to": "tc_ji"
+    },
+    {
+     "from": "svc_nanbyo_iryo",
+     "type": "TARGETS",
+     "to": "tc_nan"
+    },
+    {
+     "from": "svc_hosougu",
+     "type": "TARGETS",
+     "to": "tc_shin"
+    },
+    {
+     "from": "svc_hosougu",
+     "type": "TARGETS",
+     "to": "tc_nan"
+    },
+    {
+     "from": "svc_hosougu",
+     "type": "TARGETS",
+     "to": "tc_ji"
+    },
+    {
+     "from": "svc_nichijo_yogu",
+     "type": "TARGETS",
+     "to": "tc_shin"
+    },
+    {
+     "from": "svc_nichijo_yogu",
+     "type": "TARGETS",
+     "to": "tc_chi"
+    },
+    {
+     "from": "svc_nichijo_yogu",
+     "type": "TARGETS",
+     "to": "tc_sei"
+    },
+    {
+     "from": "svc_nichijo_yogu",
+     "type": "TARGETS",
+     "to": "tc_nan"
+    },
+    {
+     "from": "svc_nichijo_yogu",
+     "type": "TARGETS",
+     "to": "tc_ji"
+    },
+    {
+     "from": "svc_kamiomutsu",
+     "type": "TARGETS",
+     "to": "tc_shin"
+    },
+    {
+     "from": "svc_kamiomutsu",
+     "type": "TARGETS",
+     "to": "tc_chi"
+    },
+    {
+     "from": "svc_kamiomutsu",
+     "type": "TARGETS",
+     "to": "tc_nan"
+    },
+    {
+     "from": "svc_kamiomutsu",
+     "type": "TARGETS",
+     "to": "tc_ji"
+    },
+    {
+     "from": "svc_hojoken",
+     "type": "TARGETS",
+     "to": "tc_shin"
+    },
+    {
+     "from": "svc_ido_shien",
+     "type": "TARGETS",
+     "to": "tc_shin"
+    },
+    {
+     "from": "svc_ido_shien",
+     "type": "TARGETS",
+     "to": "tc_chi"
+    },
+    {
+     "from": "svc_ido_shien",
+     "type": "TARGETS",
+     "to": "tc_sei"
+    },
+    {
+     "from": "svc_ido_shien",
+     "type": "TARGETS",
+     "to": "tc_nan"
+    },
+    {
+     "from": "svc_ido_shien",
+     "type": "TARGETS",
+     "to": "tc_ji"
+    },
+    {
+     "from": "svc_respite",
+     "type": "TARGETS",
+     "to": "tc_shin"
+    },
+    {
+     "from": "svc_respite",
+     "type": "TARGETS",
+     "to": "tc_ji"
+    },
+    {
+     "from": "svc_shakai_taiken",
+     "type": "TARGETS",
+     "to": "tc_shin"
+    },
+    {
+     "from": "svc_shakai_taiken",
+     "type": "TARGETS",
+     "to": "tc_ji"
+    },
+    {
+     "from": "svc_himawari",
+     "type": "TARGETS",
+     "to": "tc_shin"
+    },
+    {
+     "from": "svc_himawari",
+     "type": "TARGETS",
+     "to": "tc_ji"
+    },
+    {
+     "from": "svc_kyotaku_hoiku",
+     "type": "TARGETS",
+     "to": "tc_ji"
+    },
+    {
+     "from": "svc_fukushi_taxi",
+     "type": "TARGETS",
+     "to": "tc_shin"
+    },
+    {
+     "from": "svc_fukushi_taxi",
+     "type": "TARGETS",
+     "to": "tc_chi"
+    },
+    {
+     "from": "svc_fukushi_taxi",
+     "type": "TARGETS",
+     "to": "tc_nan"
+    },
+    {
+     "from": "svc_fukushi_taxi",
+     "type": "TARGETS",
+     "to": "tc_ji"
+    },
+    {
+     "from": "svc_toei_free",
+     "type": "TARGETS",
+     "to": "tc_shin"
+    },
+    {
+     "from": "svc_toei_free",
+     "type": "TARGETS",
+     "to": "tc_chi"
+    },
+    {
+     "from": "svc_toei_free",
+     "type": "TARGETS",
+     "to": "tc_sei"
+    },
+    {
+     "from": "svc_toei_free",
+     "type": "TARGETS",
+     "to": "tc_ji"
+    },
+    {
+     "from": "svc_yuryo_road",
+     "type": "TARGETS",
+     "to": "tc_shin"
+    },
+    {
+     "from": "svc_yuryo_road",
+     "type": "TARGETS",
+     "to": "tc_chi"
+    },
+    {
+     "from": "svc_yuryo_road",
+     "type": "TARGETS",
+     "to": "tc_ji"
+    },
+    {
+     "from": "svc_taxi_wari",
+     "type": "TARGETS",
+     "to": "tc_shin"
+    },
+    {
+     "from": "svc_taxi_wari",
+     "type": "TARGETS",
+     "to": "tc_chi"
+    },
+    {
+     "from": "svc_taxi_wari",
+     "type": "TARGETS",
+     "to": "tc_sei"
+    },
+    {
+     "from": "svc_taxi_wari",
+     "type": "TARGETS",
+     "to": "tc_ji"
+    },
+    {
+     "from": "svc_gyakutai",
+     "type": "TARGETS",
+     "to": "tc_shin"
+    },
+    {
+     "from": "svc_gyakutai",
+     "type": "TARGETS",
+     "to": "tc_chi"
+    },
+    {
+     "from": "svc_gyakutai",
+     "type": "TARGETS",
+     "to": "tc_sei"
+    },
+    {
+     "from": "svc_gyakutai",
+     "type": "TARGETS",
+     "to": "tc_nan"
+    },
+    {
+     "from": "svc_gyakutai",
+     "type": "TARGETS",
+     "to": "tc_ji"
+    },
+    {
+     "from": "svc_shinshin_teate",
+     "type": "REQUIRES",
+     "to": "nb_body",
+     "props": {
+      "grades": [
+       "1",
+       "2",
+       "3"
+      ]
+     }
+    },
+    {
+     "from": "svc_shinshin_teate",
+     "type": "REQUIRES",
+     "to": "nb_ai",
+     "props": {
+      "grades": [
+       "1",
+       "2",
+       "3",
+       "4"
+      ]
+     }
+    },
+    {
+     "from": "svc_seishin_teate",
+     "type": "REQUIRES",
+     "to": "nb_mental",
+     "props": {
+      "grades": [
+       "1"
+      ]
+     }
+    },
+    {
+     "from": "svc_tokubetsu_jido",
+     "type": "REQUIRES",
+     "to": "nb_body",
+     "props": {
+      "grades": [
+       "1",
+       "2",
+       "3"
+      ]
+     }
+    },
+    {
+     "from": "svc_tokubetsu_jido",
+     "type": "REQUIRES",
+     "to": "nb_ai",
+     "props": {
+      "grades": [
+       "1",
+       "2",
+       "3"
+      ]
+     }
+    },
+    {
+     "from": "svc_jido_ikusei",
+     "type": "REQUIRES",
+     "to": "nb_body",
+     "props": {
+      "grades": [
+       "1",
+       "2"
+      ]
+     }
+    },
+    {
+     "from": "svc_jido_ikusei",
+     "type": "REQUIRES",
+     "to": "nb_ai",
+     "props": {
+      "grades": [
+       "1",
+       "2",
+       "3"
+      ]
+     }
+    },
+    {
+     "from": "svc_marusho",
+     "type": "REQUIRES",
+     "to": "nb_body",
+     "props": {
+      "grades": [
+       "1",
+       "2",
+       "3"
+      ],
+      "grade_note": "3級は内部障害のみ"
+     }
+    },
+    {
+     "from": "svc_marusho",
+     "type": "REQUIRES",
+     "to": "nb_ai",
+     "props": {
+      "grades": [
+       "1",
+       "2"
+      ]
+     }
+    },
+    {
+     "from": "svc_marusho",
+     "type": "REQUIRES",
+     "to": "nb_mental",
+     "props": {
+      "grades": [
+       "1"
+      ]
+     }
+    },
+    {
+     "from": "svc_kosei_iryo",
+     "type": "REQUIRES",
+     "to": "nb_body",
+     "props": {
+      "grades": [
+       "1",
+       "2",
+       "3",
+       "4",
+       "5",
+       "6"
+      ]
+     }
+    },
+    {
+     "from": "svc_hosougu",
+     "type": "REQUIRES",
+     "to": "nb_body",
+     "props": {
+      "grades": [
+       "1",
+       "2",
+       "3",
+       "4",
+       "5",
+       "6"
+      ]
+     }
+    },
+    {
+     "from": "svc_hosougu",
+     "type": "REQUIRES",
+     "to": "nb_medcert",
+     "props": {
+      "grades": []
+     }
+    },
+    {
+     "from": "svc_nichijo_yogu",
+     "type": "REQUIRES",
+     "to": "nb_body",
+     "props": {
+      "grades": [
+       "1",
+       "2",
+       "3",
+       "4",
+       "5",
+       "6"
+      ]
+     }
+    },
+    {
+     "from": "svc_nichijo_yogu",
+     "type": "REQUIRES",
+     "to": "nb_ai",
+     "props": {
+      "grades": [
+       "1",
+       "2",
+       "3",
+       "4"
+      ]
+     }
+    },
+    {
+     "from": "svc_nichijo_yogu",
+     "type": "REQUIRES",
+     "to": "nb_mental",
+     "props": {
+      "grades": [
+       "1",
+       "2",
+       "3"
+      ]
+     }
+    },
+    {
+     "from": "svc_kamiomutsu",
+     "type": "REQUIRES",
+     "to": "nb_body",
+     "props": {
+      "grades": [
+       "1",
+       "2",
+       "3",
+       "4",
+       "5",
+       "6"
+      ]
+     }
+    },
+    {
+     "from": "svc_kamiomutsu",
+     "type": "REQUIRES",
+     "to": "nb_ai",
+     "props": {
+      "grades": [
+       "1",
+       "2",
+       "3",
+       "4"
+      ]
+     }
+    },
+    {
+     "from": "svc_hojoken",
+     "type": "REQUIRES",
+     "to": "nb_body",
+     "props": {
+      "grades": [
+       "1",
+       "2"
+      ],
+      "grade_note": "盲導犬=視覚1級／聴導犬=聴覚2級"
+     }
+    },
+    {
+     "from": "svc_tokubetsu_shogaisha",
+     "type": "REQUIRES",
+     "to": "nb_body",
+     "props": {
+      "grades": [
+       "1",
+       "2"
+      ],
+      "grade_note": "著しく重度（専用診断書で判定）"
+     }
+    },
+    {
+     "from": "svc_tokubetsu_shogaisha",
+     "type": "REQUIRES",
+     "to": "nb_ai",
+     "props": {
+      "grades": [
+       "1",
+       "2"
+      ]
+     }
+    },
+    {
+     "from": "svc_shogaiji_teate",
+     "type": "REQUIRES",
+     "to": "nb_body",
+     "props": {
+      "grades": [
+       "1",
+       "2"
+      ]
+     }
+    },
+    {
+     "from": "svc_shogaiji_teate",
+     "type": "REQUIRES",
+     "to": "nb_ai",
+     "props": {
+      "grades": [
+       "1",
+       "2"
+      ]
+     }
+    },
+    {
+     "from": "svc_judo_shinshin",
+     "type": "REQUIRES",
+     "to": "nb_body",
+     "props": {
+      "grades": [
+       "1",
+       "2"
+      ],
+      "grade_note": "重度の重複等（都センターで判定）"
+     }
+    },
+    {
+     "from": "svc_judo_shinshin",
+     "type": "REQUIRES",
+     "to": "nb_ai",
+     "props": {
+      "grades": [
+       "1",
+       "2"
+      ]
+     }
+    },
+    {
+     "from": "svc_fukushi_taxi",
+     "type": "REQUIRES",
+     "to": "nb_body",
+     "props": {
+      "grades": [
+       "1",
+       "2",
+       "3"
+      ],
+      "grade_note": "視覚1・2/下肢体幹1〜3/内部1・2/移動1・2/平衡3 等の部位条件"
+     }
+    },
+    {
+     "from": "svc_fukushi_taxi",
+     "type": "REQUIRES",
+     "to": "nb_ai",
+     "props": {
+      "grades": [
+       "1",
+       "2"
+      ]
+     }
+    },
+    {
+     "from": "svc_fukushi_taxi",
+     "type": "REQUIRES",
+     "to": "nb_mental",
+     "props": {
+      "grades": [
+       "1"
+      ]
+     }
+    },
+    {
+     "from": "svc_toei_free",
+     "type": "REQUIRES",
+     "to": "nb_body",
+     "props": {
+      "grades": [
+       "1",
+       "2",
+       "3",
+       "4",
+       "5",
+       "6"
+      ]
+     }
+    },
+    {
+     "from": "svc_toei_free",
+     "type": "REQUIRES",
+     "to": "nb_ai",
+     "props": {
+      "grades": [
+       "1",
+       "2",
+       "3",
+       "4"
+      ]
+     }
+    },
+    {
+     "from": "svc_yuryo_road",
+     "type": "REQUIRES",
+     "to": "nb_body",
+     "props": {
+      "grades": [
+       "1",
+       "2",
+       "3",
+       "4",
+       "5",
+       "6"
+      ],
+      "grade_note": "第1種/第2種"
+     }
+    },
+    {
+     "from": "svc_yuryo_road",
+     "type": "REQUIRES",
+     "to": "nb_ai",
+     "props": {
+      "grades": [
+       "1",
+       "2",
+       "3",
+       "4"
+      ],
+      "grade_note": "介護者運転は第1種知的"
+     }
+    },
+    {
+     "from": "svc_taxi_wari",
+     "type": "REQUIRES",
+     "to": "nb_body",
+     "props": {
+      "grades": [
+       "1",
+       "2",
+       "3",
+       "4",
+       "5",
+       "6"
+      ]
+     }
+    },
+    {
+     "from": "svc_taxi_wari",
+     "type": "REQUIRES",
+     "to": "nb_ai",
+     "props": {
+      "grades": [
+       "1",
+       "2",
+       "3",
+       "4"
+      ]
+     }
+    },
+    {
+     "from": "svc_taxi_wari",
+     "type": "REQUIRES",
+     "to": "nb_mental",
+     "props": {
+      "grades": [
+       "1",
+       "2",
+       "3"
+      ]
+     }
+    },
+    {
+     "from": "svc_shinshin_teate",
+     "type": "ADMINISTERED_BY",
+     "to": "c_zaitaku",
+     "props": {
+      "for": "全"
+     }
+    },
+    {
+     "from": "svc_seishin_teate",
+     "type": "ADMINISTERED_BY",
+     "to": "c_yobo",
+     "props": {
+      "for": "精神"
+     }
+    },
+    {
+     "from": "svc_tokubetsu_shogaisha",
+     "type": "ADMINISTERED_BY",
+     "to": "c_zaitaku",
+     "props": {
+      "for": "全"
+     }
+    },
+    {
+     "from": "svc_shogaiji_teate",
+     "type": "ADMINISTERED_BY",
+     "to": "c_zaitaku",
+     "props": {
+      "for": "全"
+     }
+    },
+    {
+     "from": "svc_judo_shinshin",
+     "type": "ADMINISTERED_BY",
+     "to": "c_zaitaku",
+     "props": {
+      "for": "全"
+     }
+    },
+    {
+     "from": "svc_tokubetsu_jido",
+     "type": "ADMINISTERED_BY",
+     "to": "c_kosodate",
+     "props": {
+      "for": "全"
+     }
+    },
+    {
+     "from": "svc_jido_ikusei",
+     "type": "ADMINISTERED_BY",
+     "to": "c_kosodate",
+     "props": {
+      "for": "全"
+     }
+    },
+    {
+     "from": "svc_marusho",
+     "type": "ADMINISTERED_BY",
+     "to": "c_zaitaku",
+     "props": {
+      "for": "身体・愛の手帳"
+     }
+    },
+    {
+     "from": "svc_marusho",
+     "type": "ADMINISTERED_BY",
+     "to": "c_yobo",
+     "props": {
+      "for": "精神"
+     }
+    },
+    {
+     "from": "svc_kosei_iryo",
+     "type": "ADMINISTERED_BY",
+     "to": "c_shintai",
+     "props": {
+      "for": "身体"
+     }
+    },
+    {
+     "from": "svc_seishin_tsuin",
+     "type": "ADMINISTERED_BY",
+     "to": "c_yobo",
+     "props": {
+      "for": "精神"
+     }
+    },
+    {
+     "from": "svc_nanbyo_iryo",
+     "type": "ADMINISTERED_BY",
+     "to": "c_hoken",
+     "props": {
+      "for": "難病"
+     }
+    },
+    {
+     "from": "svc_hosougu",
+     "type": "ADMINISTERED_BY",
+     "to": "c_shintai",
+     "props": {
+      "for": "身体"
+     }
+    },
+    {
+     "from": "svc_hosougu",
+     "type": "ADMINISTERED_BY",
+     "to": "c_yobo_svc",
+     "props": {
+      "for": "難病"
+     }
+    },
+    {
+     "from": "svc_nichijo_yogu",
+     "type": "ADMINISTERED_BY",
+     "to": "c_shintai",
+     "props": {
+      "for": "身体・知的"
+     }
+    },
+    {
+     "from": "svc_nichijo_yogu",
+     "type": "ADMINISTERED_BY",
+     "to": "c_yobo_svc",
+     "props": {
+      "for": "精神・難病"
+     }
+    },
+    {
+     "from": "svc_kamiomutsu",
+     "type": "ADMINISTERED_BY",
+     "to": "c_zaitaku",
+     "props": {
+      "for": "全"
+     }
+    },
+    {
+     "from": "svc_hojoken",
+     "type": "ADMINISTERED_BY",
+     "to": "c_shintai",
+     "props": {
+      "for": "身体"
+     }
+    },
+    {
+     "from": "svc_ido_shien",
+     "type": "ADMINISTERED_BY",
+     "to": "c_shintai",
+     "props": {
+      "for": "身体"
+     }
+    },
+    {
+     "from": "svc_ido_shien",
+     "type": "ADMINISTERED_BY",
+     "to": "c_chiteki",
+     "props": {
+      "for": "知的"
+     }
+    },
+    {
+     "from": "svc_ido_shien",
+     "type": "ADMINISTERED_BY",
+     "to": "c_yobo_svc",
+     "props": {
+      "for": "精神・難病"
+     }
+    },
+    {
+     "from": "svc_respite",
+     "type": "ADMINISTERED_BY",
+     "to": "c_shintai",
+     "props": {
+      "for": "医療的ケア児"
+     }
+    },
+    {
+     "from": "svc_kyotaku_hoiku",
+     "type": "ADMINISTERED_BY",
+     "to": "c_yoji",
+     "props": {
+      "for": "児"
+     }
+    },
+    {
+     "from": "svc_fukushi_taxi",
+     "type": "ADMINISTERED_BY",
+     "to": "c_zaitaku",
+     "props": {
+      "for": "身体・愛の手帳・医療券"
+     }
+    },
+    {
+     "from": "svc_fukushi_taxi",
+     "type": "ADMINISTERED_BY",
+     "to": "c_yobo",
+     "props": {
+      "for": "精神"
+     }
+    },
+    {
+     "from": "svc_toei_free",
+     "type": "ADMINISTERED_BY",
+     "to": "c_zaitaku",
+     "props": {
+      "for": "身体・愛の手帳"
+     }
+    },
+    {
+     "from": "svc_yuryo_road",
+     "type": "ADMINISTERED_BY",
+     "to": "c_zaitaku",
+     "props": {
+      "for": "身体・愛の手帳"
+     }
+    },
+    {
+     "from": "svc_gyakutai",
+     "type": "ADMINISTERED_BY",
+     "to": "c_gyakutai",
+     "props": {
+      "for": "通報",
+      "hours": "月〜金 8:30〜17:15（日中）"
+     }
+    },
+    {
+     "from": "svc_gyakutai",
+     "type": "ADMINISTERED_BY",
+     "to": "c_kikan",
+     "props": {
+      "for": "通報",
+      "hours": "平日夜間・土日祝 24時間"
+     }
+    },
+    {
+     "from": "svc_shinshin_teate",
+     "type": "DEFINED_BY",
+     "to": "ref_income"
+    },
+    {
+     "from": "svc_shinshin_teate",
+     "type": "DEFINED_BY",
+     "to": "ref_teate_shippei"
+    },
+    {
+     "from": "svc_seishin_teate",
+     "type": "DEFINED_BY",
+     "to": "ref_income"
+    },
+    {
+     "from": "svc_tokubetsu_shogaisha",
+     "type": "DEFINED_BY",
+     "to": "ref_income"
+    },
+    {
+     "from": "svc_shogaiji_teate",
+     "type": "DEFINED_BY",
+     "to": "ref_income"
+    },
+    {
+     "from": "svc_judo_shinshin",
+     "type": "DEFINED_BY",
+     "to": "ref_income"
+    },
+    {
+     "from": "svc_tokubetsu_jido",
+     "type": "DEFINED_BY",
+     "to": "ref_income"
+    },
+    {
+     "from": "svc_jido_ikusei",
+     "type": "DEFINED_BY",
+     "to": "ref_income"
+    },
+    {
+     "from": "svc_marusho",
+     "type": "DEFINED_BY",
+     "to": "ref_income"
+    },
+    {
+     "from": "svc_hosougu",
+     "type": "DEFINED_BY",
+     "to": "ref_nanbyo"
+    },
+    {
+     "from": "svc_nichijo_yogu",
+     "type": "DEFINED_BY",
+     "to": "ref_nanbyo"
+    },
+    {
+     "from": "svc_nanbyo_iryo",
+     "type": "DEFINED_BY",
+     "to": "ref_nanbyo"
+    },
+    {
+     "from": "svc_fukushi_taxi",
+     "type": "DEFINED_BY",
+     "to": "ref_income"
+    },
+    {
+     "from": "svc_seishin_teate",
+     "type": "MUTUALLY_EXCLUSIVE_WITH",
+     "to": "svc_shinshin_teate",
+     "props": {
+      "basis": "精神障害者福祉手当の受給できない方に「心身障害者等福祉手当の受給者」"
+     }
+    },
+    {
+     "from": "svc_shinshin_teate",
+     "type": "MUTUALLY_EXCLUSIVE_WITH",
+     "to": "svc_jido_ikusei",
+     "props": {
+      "basis": "受給できない方に「児童育成手当（障害手当）の受給者」"
+     }
+    },
+    {
+     "from": "svc_seishin_teate",
+     "type": "MUTUALLY_EXCLUSIVE_WITH",
+     "to": "svc_jido_ikusei",
+     "props": {
+      "basis": "受給できない方に「児童育成手当（障害手当）の受給者」"
+     }
+    },
+    {
+     "from": "svc_hosougu",
+     "type": "RELATED_TO",
+     "to": "svc_nichijo_yogu"
+    },
+    {
+     "from": "svc_respite",
+     "type": "RELATED_TO",
+     "to": "svc_shakai_taiken"
+    },
+    {
+     "from": "svc_shakai_taiken",
+     "type": "RELATED_TO",
+     "to": "svc_himawari"
+    },
+    {
+     "from": "svc_respite",
+     "type": "RELATED_TO",
+     "to": "svc_kyotaku_hoiku"
+    },
+    {
+     "from": "f_lien",
+     "type": "PROVIDED_AT",
+     "to": "svc_shakai_taiken"
+    },
+    {
+     "from": "f_himawari",
+     "type": "PROVIDED_AT",
+     "to": "svc_himawari"
+    }
+   ]
+  },
+  "kg_extracted": {
+   "nodes": [
+    {
+     "id": "nb_physical_disability_handbook",
+     "labels": [
+      "PhysicalDisabilityHandbook"
+     ],
+     "props": {
+      "name": "身体障害者手帳",
+      "source": "ai-no-techo",
+      "type_label": "身体障害者手帳"
+     }
+    },
+    {
+     "id": "nb_bunkyo_disability_welfare_division",
+     "labels": [
+      "BunkyoDisabilityWelfareDivision"
+     ],
+     "props": {
+      "name": "文京区 障害福祉課",
+      "source": "disability-welfare-division",
+      "type_label": "文京区 障害福祉課"
+     }
+    },
+    {
+     "id": "contact_disability_welfare",
+     "labels": [
+      "ContactWindow"
+     ],
+     "props": {
+      "name": "障害福祉課 相談の窓口",
+      "source": "disability-welfare-division",
+      "type_label": "相談の窓口"
+     }
+    },
+    {
+     "id": "nb_mental_disability_handbook",
+     "labels": [
+      "MentalDisabilityHandbook"
+     ],
+     "props": {
+      "name": "精神障害者保健福祉手帳",
+      "source": "shintaishogaisha-techo",
+      "type_label": "精神障害者保健福祉手帳"
+     }
+    },
+    {
+     "id": "nb_bunkyo_prevention_measures_division",
+     "labels": [
+      "BunkyoPreventionMeasuresDivision"
+     ],
+     "props": {
+      "name": "文京区 予防対策課",
+      "source": "disability-welfare-division",
+      "type_label": "文京区 予防対策課"
+     }
+    },
+    {
+     "id": "nb_public_health_service_center",
+     "labels": [
+      "PublicHealthServiceCenter"
+     ],
+     "props": {
+      "name": "保健サービスセンター",
+      "source": "disability-welfare-division",
+      "type_label": "保健サービスセンター"
+     }
+    },
+    {
+     "id": "nb_ai_no_techo",
+     "labels": [
+      "AiNoTecho"
+     ],
+     "props": {
+      "name": "愛の手帳（知的障害者手帳）",
+      "source": "handbooks",
+      "type_label": "愛の手帳（知的障害者手帳）"
+     }
+    },
+    {
+     "id": "nb_child_consultation_center",
+     "labels": [
+      "ChildConsultationCenter"
+     ],
+     "props": {
+      "name": "児童相談所",
+      "source": "disability-welfare-division",
+      "type_label": "児童相談所"
+     }
+    },
+    {
+     "id": "svc_automobile_accident_support",
+     "labels": [
+      "AutomobileAccidentSupportSystem"
+     ],
+     "props": {
+      "name": "自動車事故被害者支援制度",
+      "source": "allowances-pensions-loans",
+      "type_label": "自動車事故被害者支援制度"
+     }
+    },
+    {
+     "id": "nb_bunbun_marushe",
+     "labels": [
+      "DisabilityFacility"
+     ],
+     "props": {
+      "name": "ぶんぶんまるしぇ",
+      "source": "bunkyo-city",
+      "type_label": "障害者施設"
+     }
+    },
+    {
+     "id": "svc_chronic_pediatric_disease_daily_living_aid",
+     "labels": [
+      "ChronicPediatricDiseaseDailyLivingAidBenefit"
+     ],
+     "props": {
+      "name": "小児慢性特定疾病児童日常生活用具給付",
+      "source": "chronic-pediatric-disease-medical-expense-subsidy,nichijo-seikatsu-yogu-no-kyufu",
+      "type_label": "小児慢性特定疾病児童日常生活用具給付",
+      "pageNumber": 75
+     }
+    },
+    {
+     "id": "svc_parking_fee_reduction",
+     "labels": [
+      "ParkingFeeReductionSystem"
+     ],
+     "props": {
+      "name": "駐車料金減額制度",
+      "source": "chusha-kinshi-no-taisho-jogai",
+      "type_label": "駐車料金減額制度",
+      "pageNumber": 113
+     }
+    },
+    {
+     "id": "svc_anshin_consultation",
+     "labels": [
+      "AnshinConsultationService"
+     ],
+     "props": {
+      "name": "手をつなぐあんしん相談",
+      "source": "consultation-windows",
+      "type_label": "手をつなぐあんしん相談"
+     }
+    },
+    {
+     "id": "svc_daily_living_aid_reduction",
+     "labels": [
+      "ReductionSystem"
+     ],
+     "props": {
+      "name": "日常生活用具給付事業の利用者負担減免",
+      "source": "daily-living-aids-benefit",
+      "type_label": "軽減制度"
+     }
+    },
+    {
+     "id": "svc_yometeru",
+     "labels": [
+      "InformationSupport"
+     ],
+     "props": {
+      "name": "ヨメテル(文字表示電話サービス)",
+      "source": "denwa-relay-service",
+      "type_label": "情報支援"
+     }
+    },
+    {
+     "id": "svc_ear_mark",
+     "labels": [
+      "EarMark"
+     ],
+     "props": {
+      "name": "耳マーク",
+      "source": "ear-mark",
+      "type_label": "耳マーク"
+     }
+    },
+    {
+     "id": "svc_evacuation_registry",
+     "labels": [
+      "EvacuationSupportRegistry"
+     ],
+     "props": {
+      "name": "避難行動要支援者名簿",
+      "source": "fukushi-hinanjo-no-secchi",
+      "type_label": "避難行動要支援者名簿",
+      "pageNumber": 94
+     }
+    },
+    {
+     "id": "svc_help_mark",
+     "labels": [
+      "HelpMark"
+     ],
+     "props": {
+      "name": "ヘルプマーク",
+      "source": "heart-plus-mark,help-card",
+      "type_label": "ヘルプマーク"
+     }
+    },
+    {
+     "id": "svc_help_card",
+     "labels": [
+      "HelpCard"
+     ],
+     "props": {
+      "name": "ヘルプカード",
+      "source": "help-mark",
+      "type_label": "ヘルプカード",
+      "pageNumber": 98
+     }
+    },
+    {
+     "id": "svc_respite_service",
+     "labels": [
+      "MedicalCareChildRespiteService"
+     ],
+     "props": {
+      "name": "医療的ケア児在宅レスパイト事業",
+      "source": "iryoteki-care-ji-no-shakai-taiken-program",
+      "type_label": "医療的ケア児在宅レスパイト事業",
+      "pageNumber": 85
+     }
+    },
+    {
+     "id": "svc_himawari_room",
+     "labels": [
+      "MedicalCareChildSupportRoomHimawari"
+     ],
+     "props": {
+      "name": "医療的ケア児支援ルームひまわり",
+      "source": "iryoteki-care-ji-zaitaku-respite-jigyo",
+      "type_label": "医療的ケア児支援ルームひまわり",
+      "pageNumber": 86
+     }
+    },
+    {
+     "id": "svc_magnetic_loop_installation",
+     "labels": [
+      "MagneticLoopInstallationService"
+     ],
+     "props": {
+      "name": "磁気ループの設置",
+      "source": "onsei-yudo-sochi-no-secchi",
+      "type_label": "磁気ループ設置サービス",
+      "pageNumber": 104
+     }
+    },
+    {
+     "id": "svc_braille_book_benefit",
+     "labels": [
+      "BrailleBookBenefitSystem"
+     ],
+     "props": {
+      "name": "点字図書の給付",
+      "source": "kuritsu-toshokan-no-riyo-shien",
+      "type_label": "点字図書給付制度",
+      "pageNumber": 101
+     }
+    },
+    {
+     "id": "svc_driving_license_acquisition_subsidy",
+     "labels": [
+      "DrivingLicenseAcquisitionSubsidy"
+     ],
+     "props": {
+      "name": "心身障害者自動車運転免許取得経費補助",
+      "source": "shintai-shogaisha-jidousha-kaizo-hi-josei",
+      "type_label": "運転免許取得費助成",
+      "pageNumber": 110
+     }
+    },
+    {
+     "id": "svc_nighttime_mental_consultation",
+     "labels": [
+      "NighttimeMentalHealthPhoneConsultation"
+     ],
+     "props": {
+      "name": "夜間こころの電話相談",
+      "source": "tokyo-psychiatric-mental-health-center",
+      "type_label": "夜間精神保健電話相談"
+     }
+    }
+   ],
+   "edges": [
+    {
+     "from": "nb_physical_disability_handbook",
+     "to": "nb_bunkyo_disability_welfare_division",
+     "type": "hasApplicationWindow"
+    },
+    {
+     "from": "nb_bunkyo_disability_welfare_division",
+     "to": "contact_disability_welfare",
+     "type": "hasContactInfo"
+    },
+    {
+     "from": "nb_mental_disability_handbook",
+     "to": "nb_bunkyo_prevention_measures_division",
+     "type": "hasApplicationWindow"
+    },
+    {
+     "from": "nb_mental_disability_handbook",
+     "to": "nb_public_health_service_center",
+     "type": "hasApplicationWindow"
+    },
+    {
+     "from": "nb_ai_no_techo",
+     "to": "nb_child_consultation_center",
+     "type": "hasAssessmentLocationForMinors"
+    }
+   ]
+  },
+  "kg_meta": {
+   "nodes": 25,
+   "edges": 5,
+   "neo4j": {
+    "connected": true,
+    "message": "Neo4jに投入完了（25ノード / 5エッジ）"
+   }
+  },
+  "status": "refined",
+  "coverage": {
+   "round": 2,
+   "per_cq": [
+    {
+     "id": "QA01",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "行政機関による手帳の判定・審査関係 (assessesCertificate) により対応可能。"
+    },
+    {
+     "id": "QA02",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "専門的判定を提供する関係 (providesExpertAssessment) および手帳判定関係により対応可能。"
+    },
+    {
+     "id": "QA03",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "行政機関と福祉サービスの関係 (managesService) により対応可能。"
+    },
+    {
+     "id": "QA04",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "手帳等級 (degree) およびサービスと手帳の要件関係 (requiresCertificate) により対応可能。"
+    },
+    {
+     "id": "QA05",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "WelfareService の対象年齢プロパティおよび行政機関との管理関係により対応可能。"
+    },
+    {
+     "id": "QA06",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "WelfareService のインスタンスおよびその特徴プロパティで対応可能。"
+    },
+    {
+     "id": "QA07",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "WelfareService 同士の関連関係 (hasSubService) により対応可能。"
+    },
+    {
+     "id": "QA08",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "手帳の有効期限プロパティおよびサービスとの要件関係により対応可能。"
+    },
+    {
+     "id": "QA09",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "WelfareService の申請方法プロパティおよび行政機関との管理関係により対応可能。"
+    },
+    {
+     "id": "QA10",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "計画相談支援を WelfareService として、行政機関との管轄関係で対応可能。"
+    },
+    {
+     "id": "QA11",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "助成上限額 (maxSubsidyAmount) および行政機関との管轄関係で対応可能。"
+    },
+    {
+     "id": "QA12",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "民間団体 (NonGovernmentalOrganization) とサービス運営関係 (operatesService) により対応可能。"
+    },
+    {
+     "id": "QA13",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "手帳クラスの等級プロパティおよび手帳窓口管理関係 (managesCertificate) により対応可能。"
+    },
+    {
+     "id": "QA14",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "WelfareService の根拠法令プロパティおよび行政機関との管轄関係により対応可能。"
+    },
+    {
+     "id": "QA15",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "ヘルプカードを WelfareService として、行政機関との関係および特徴で対応可能。"
+    },
+    {
+     "id": "QA16",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "民間団体 (NonGovernmentalOrganization) とサブサービス関係により対応可能。"
+    },
+    {
+     "id": "QA17",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "自立支援医療サービスと行政機関の管轄関係により対応可能。"
+    },
+    {
+     "id": "QA18",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "AdministrativeOrganization の管轄業務プロパティにより対応可能。"
+    },
+    {
+     "id": "QA19",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "受給者証を必要とする関係 (requiresBeneficiaryCertificate) により対応可能。"
+    },
+    {
+     "id": "QA20",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "手帳クラスの障害程度プロパティにより対応可能。"
+    },
+    {
+     "id": "QA21",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "WelfareService の助成率プロパティにより対応可能。"
+    },
+    {
+     "id": "QA22",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "WelfareService の自己負担額（回数内訳含む）プロパティにより対応可能。"
+    },
+    {
+     "id": "QA23",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "TaxRelief の控除額プロパティおよび適用要件プロパティにより対応可能。"
+    },
+    {
+     "id": "QA24",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "健康診査を WelfareService として、自己負担額や要件プロパティにより対応可能。"
+    },
+    {
+     "id": "QA25",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "乗車運賃割引サービスと手帳の要件関係により対応可能。"
+    },
+    {
+     "id": "QA26",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "代理投票制度を WelfareService の一種として対応可能。"
+    },
+    {
+     "id": "QA27",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "IncomeCategory および所得区分に応じた自己負担関係 (hasCoPayForIncome) により対応可能。"
+    },
+    {
+     "id": "QA28",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "点字投票制度を WelfareService の一種として対応可能。"
+    },
+    {
+     "id": "QA29",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "電話リレーサービスを WelfareService のインスタンスとして対応可能。"
+    },
+    {
+     "id": "QA30",
+     "verdict": "covered",
+     "missing": {
+      "classes": [],
+      "properties": [],
+      "relationships": []
+     },
+     "note": "医療費助成を WelfareService として、自己負担上限月額などの関係で対応可能。"
+    }
+   ],
+   "summary": {
+    "covered": 30,
+    "partial": 0,
+    "missing": 0
+   }
+  },
+  "coverage_history": [
+   {
+    "round": 1,
+    "summary": {
+     "covered": 28,
+     "partial": 2,
+     "missing": 0
+    },
+    "gaps": 2,
+    "classes": 9,
+    "relationships": 13,
+    "constraints": 10
+   },
+   {
+    "round": 2,
+    "summary": {
+     "covered": 30,
+     "partial": 0,
+     "missing": 0
+    },
+    "gaps": 0,
+    "classes": 9,
+    "relationships": 14,
+    "constraints": 10
+   }
+  ]
+ },
+ "validation": {}
+}

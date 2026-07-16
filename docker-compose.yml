@@ -34,6 +34,7 @@ services:
       - "8790:8790"
     volumes:
       - app_state:/app/graphrag/review
+      - ./pipeline/step1_data:/app/pipeline/step1_data
     depends_on:
       neo4j:
         condition: service_healthy
