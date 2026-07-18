@@ -2,7 +2,7 @@
 """Naive RAG: PDF chunks + Gemini embeddings + direct LLM answer.
 
 Usage:
-    py -3.14 naive_rag.py "身体障害者手帳2級で受けられる手当は？"
+    py -3.14 naive_rag.py "（質問文）"
 """
 import json, math, os, sys, re
 
@@ -58,7 +58,7 @@ def retrieve(query, k=TOP_K):
 
 
 SYSTEM_PROMPT = (
-    "あなたは文京区の障害者福祉の案内担当です。以下の【参考資料】だけを使って、"
+    f"あなたは、{config.get_kb_label()}の案内アシスタントです。以下の【参考資料】だけを使って、"
     "日本語で簡潔に答えてください。資料にない情報は創作せず「分かりません」と述べてください。"
     "回答には出典のページ番号を含めてください。"
 )
@@ -78,7 +78,7 @@ def ask(query):
 
 
 if __name__ == "__main__":
-    q = sys.argv[1] if len(sys.argv) > 1 else "身体障害者手帳2級で受けられる手当は？"
+    q = sys.argv[1] if len(sys.argv) > 1 else "（質問文を引数で指定してください）"
     res = ask(q)
     print(f"Answer:\n{res['answer']}\n")
     print(f"Sources: {res['sources']}")

@@ -14,3 +14,10 @@ __pycache__/
 # # 抽出のたびに再生成される出力（実行時データ）
 # pipeline/server/kg_extracted.json
 # pipeline/server/neo4j_import.cypher
+
+# Wiki/KGノード埋め込みキャッシュ（内容ハッシュから自動再生成される派生データ。
+# コンテナのボリュームには永続化されるが、リポジトリには含めない）
+pipeline/step1_data/wiki_embeddings.json
+pipeline/step1_data/kg_node_embeddings.json
+# ナイーブRAG用PDFチャンク埋め込み（naive_rag.pyが初回利用時に自動生成。22MB超のため追跡しない）
+pipeline/step1_data/raw/embeddings.json

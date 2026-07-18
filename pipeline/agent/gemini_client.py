@@ -16,7 +16,8 @@ _client = None
 def client():
     global _client
     if _client is None:
-        _client = genai.Client(api_key=get_key())
+        # timeout未設定だと応答待ちのまま無限にハングしうるため必ず設定する（ミリ秒単位）
+        _client = genai.Client(api_key=get_key(), http_options=types.HttpOptions(timeout=120000))
     return _client
 
 def embed_texts(texts, task_type="RETRIEVAL_DOCUMENT"):

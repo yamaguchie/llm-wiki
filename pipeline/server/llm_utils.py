@@ -24,7 +24,10 @@ def genai():
     _load_env()
     import google.genai as genai
     from google.genai import types
-    client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+    # timeout未設定だとネットワーク不調時に応答待ちのまま無限にハングしうる（実際に発生した事例あり）。
+    # ミリ秒単位。バッチ処理のような繰り返し呼び出しでは、1回が固まると全体が進まなくなるため必須。
+    client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"),
+                          http_options=types.HttpOptions(timeout=120000))
     model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
     _GENAI_CACHE = (client, model, types)
     return _GENAI_CACHE

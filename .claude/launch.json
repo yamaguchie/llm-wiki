@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "fastapi-app",
+      "runtimeExecutable": "py",
+      "runtimeArgs": ["-3.14", "-m", "uvicorn", "server.main:app", "--app-dir", "pipeline", "--host", "127.0.0.1", "--port", "8790"],
+      "port": 8790
+    }
+  ]
+}

@@ -23,6 +23,7 @@ if os.path.isfile(CONSTRAINTS_PATH):
         _ACTIVE_CONSTRAINTS = json.load(open(CONSTRAINTS_PATH, encoding="utf-8")).get("constraints", [])
     except: pass
 import gemini_client as gc
+import config
 
 # ---------- data ----------
 KG = json.load(open(os.path.join(HERE, "..", "step3_kg", "data", "kg.json"), encoding="utf-8"))
@@ -157,7 +158,7 @@ def retrieve(sg, trace, step=None):
 
 # ---------- LLM prompts ----------
 PLANNER_SYS = (
- "あなたは障害者福祉サービス検索エージェントのプランナー。ユーザーの質問を、ナレッジグラフを引くための"
+ "あなたはサービス検索エージェントのプランナー。ユーザーの質問を、ナレッジグラフを引くための"
  "サブゴール配列に分解する。kindは次から選ぶ: eligible(手帳と等級で受けられるサービス列挙), "
  "service_detail(特定サービスの詳細), contact(窓口), constraint(条件/制限/併給可否の確認), "
  "free_hours(月何時間無料), mcc(医療的ケア児向け一覧), category(カテゴリ一覧), abuse(虐待通報先). "
@@ -175,7 +176,7 @@ CRITIC_SYS = (
  'JSON形式: {"ok":true/false,"missing":"不足の説明or空","extra_subgoal":null or {"kind":"...","notebook":null,"grade":null,"category":null,"service_hint":null}}'
 )
 ANSWER_SYS = (
-    "あなたは文京区の障害者福祉の案内担当。与えられた【根拠】だけを使って、日本語で簡潔に答える。"
+    f"あなたは、{config.get_kb_label()}の案内アシスタントです。与えられた【根拠】だけを使って、日本語で簡潔に答える。"
     "重要ルール: (1)根拠に無い金額・等級・電話番号を創作しない。(2)金額や窓口(電話)、根拠(wikiページ/原本ページ)を含める。"
     "(3)金額・時間上限・等級には『※令和7年5月末時点、要確認』を一言添える。(4)根拠が不足なら『分かりません/窓口にご確認を』と述べる。"
     "(5)Markdownの見出しや箇条書きで読みやすく。"
@@ -248,7 +249,7 @@ def _run_impl(query, max_rounds=2, stream=False):
     return {"answer": answer, "trace": trace, "n_facts": len(facts)}
 
 if __name__ == "__main__":
-    q = sys.argv[1] if len(sys.argv) > 1 else "身体障害者手帳2級で受けられる手当は？"
+    q = sys.argv[1] if len(sys.argv) > 1 else "（質問文を引数で指定してください）"
     res = run(q)
     out = ["Q: " + q, "", "TRACE:"]
     for t in res["trace"]:

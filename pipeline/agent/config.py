@@ -42,6 +42,11 @@ def get_model():
 def get_embed_model():
     return _get("GEMINI_EMBED_MODEL", "gemini-embedding-001")
 
+def get_kb_label():
+    """LLMプロンプトのペルソナに使う知識ベースの表示名。ドメイン名をコードに直書きせず、
+    .env の KB_LABEL で別プロジェクトでも使い回せるようにする。"""
+    return _get("KB_LABEL", "この知識ベース")
+
 # backward-compat
 def load_env(path=None):
     global _ENV
