@@ -7,7 +7,7 @@ Configurable via environment (see config at bottom).
 
 Usage:
     pip install langgraph langchain-anthropic langchain-google-genai
-    py -3.14 langgraph_app.py "身体障害者手帳2級で受けられる手当は？"
+    py -3.14 langgraph_app.py "（質問文）"
 
 Architecture (matches spec Phase6):
     ① Planner(LLM) → ② Retrieval(graph/vector) → ③ Critic(LLM)
@@ -188,7 +188,7 @@ def svc_card(sid):
 # ── Prompts ──
 
 PLANNER_SYS = (
-    "あなたは障害者福祉サービス検索エージェントのプランナー。ユーザーの質問を、ナレッジグラフを引くための"
+    "あなたはサービス検索エージェントのプランナー。ユーザーの質問を、ナレッジグラフを引くための"
     "サブゴール配列に分解する。kindは次から選ぶ: eligible(手帳と等級で受けられるサービス列挙), "
     "service_detail(特定サービスの詳細), contact(窓口), exclusion(受けられない条件), compat(2制度の併給可否), "
     "free_hours(月何時間無料), mcc(医療的ケア児向け一覧), category(カテゴリ一覧), abuse(虐待通報先). "
@@ -208,9 +208,9 @@ CRITIC_SYS = (
 )
 
 ANSWER_SYS = (
-    "あなたは文京区の障害者福祉の案内担当。与えられた【根拠】だけを使って、日本語で簡潔に答える。"
+    f"あなたは、{os.environ.get('KB_LABEL', 'この知識ベース')}の案内アシスタントです。与えられた【根拠】だけを使って、日本語で簡潔に答える。"
     "重要ルール: (1)根拠に無い金額・等級・電話番号を創作しない。(2)金額や窓口(電話)、根拠(wikiページ/原本ページ)を含める。"
-    "(3)金額・時間上限・等級には『※令和7年5月末時点、要確認』を一言添える。(4)根拠が不足なら『分かりません/窓口にご確認を』と述べる。"
+    "(3)金額・時間上限・等級などの数値には『※要確認』を一言添える。(4)根拠が不足なら『分かりません/窓口にご確認を』と述べる。"
     "(5)Markdownの見出しや箇条書きで読みやすく。"
 )
 
@@ -392,7 +392,7 @@ def run(query: str, provider: str = "anthropic") -> dict:
 if __name__ == "__main__":
     import argparse
     p = argparse.ArgumentParser(description="LangGraph agentic search")
-    p.add_argument("query", nargs="?", default="身体障害者手帳2級で受けられる手当は？")
+    p.add_argument("query", nargs="?", default="（質問文）")
     p.add_argument("--provider", choices=["anthropic", "gemini"], default="anthropic",
                    help="LLM provider (default: anthropic). Set ANTHROPIC_API_KEY or GEMINI_API_KEY in env/.env")
     args = p.parse_args()

@@ -16,7 +16,7 @@ Endpoints:
     GET  /api/ontology/summary     — オントロジー統計
     GET  /api/cq/results           — QAテスト結果
 """
-import json, os, sys, datetime, re, glob, uuid, threading, time, shutil, asyncio
+import json, os, sys, datetime, re, glob, uuid, threading, time, shutil, asyncio, hashlib, unicodedata
 from enum import Enum
 from typing import Optional
 from pathlib import Path
@@ -35,19 +35,10 @@ ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 # ── チャットAPI（統合） ──
-import agent, naive_rag
-
-@app.post("/api/ask")
-async def chat_ask(request: Request):
-    data = await request.json()
-    q = (data.get("query") or "").strip()
-    if not q: return JSONResponse({"error": "empty query"}, status_code=400)
-    async def event_stream():
-        for event in agent.run_stream(q):
-            yield json.dumps(event, ensure_ascii=False) + "\n"
-            await asyncio.sleep(0)
-    return StreamingResponse(event_stream(), media_type="application/x-ndjson",
-                             headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
+# 旧 /api/ask（agent.py の固定 kg.json ベース検索）は、チャット画面が動的KG(kg_extracted/Neo4j)
+# ベースの /api/validation/ask に一本化されたことで不要になったため削除した（agent.py 自体は
+# 独立実行可能なCLIとして残置）。KGの実体は今後すべて 3.1 の抽出結果（kg_extracted/Neo4j）に一本化する。
+import naive_rag
 
 @app.post("/api/rag")
 async def rag_ask(request: Request):
@@ -643,8 +634,10 @@ async def upload_raw_pdf(file: UploadFile = File(...)):
                     for line in f:
                         for k in ("GEMINI_API_KEY", "GEMINI_MODEL", "GEMINI_EMBED_MODEL"):
                             if line.startswith(k + "="):
-                                os.environ[k] = line.split("=", 1)[1].strip()
-            _client = _genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+                                os.environ.setdefault(k, line.split("=", 1)[1].strip())
+            # timeout未設定だと応答待ちのまま無限にハングしうるため必ず設定する（ミリ秒単位）
+            _client = _genai.Client(api_key=os.environ.get("GEMINI_API_KEY"),
+                                    http_options=types.HttpOptions(timeout=120000))
             model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 
             # 旧出力（ページ/章txt）をクリア
@@ -653,7 +646,7 @@ async def upload_raw_pdf(file: UploadFile = File(...)):
                     os.remove(old)
 
             OCR_PROMPT = (
-                "この画像は日本語PDF（障害者福祉のてびき）の1ページです。ページ内の本文・見出し・箇条書き・"
+                "この画像はアップロードされた日本語PDF資料の1ページです。ページ内の本文・見出し・箇条書き・"
                 "表・金額・電話番号・住所を、レイアウトを尊重しつつ忠実にテキスト化してください。"
                 "表は行/列が分かる形で。創作・要約・翻訳はせず、書かれている内容のみを出力。"
                 "前置き（「はい」等）や説明は不要、テキストのみを返してください。"
@@ -685,7 +678,7 @@ async def upload_raw_pdf(file: UploadFile = File(...)):
             heads = "\n".join(f"p{p['page']}: {p['text'][:150].replace(chr(10), ' ')}" for p in pages)
             try:
                 seg = llm_json(
-                    "あなたは文書構造化エージェント。日本語PDF『障害者福祉のてびき』の各ページ冒頭テキストから、"
+                    "あなたは文書構造化エージェント。アップロードされた日本語PDF資料の各ページ冒頭テキストから、"
                     "章（大きな節）の区切りを判定する。全ページを漏れなく連続した章に割り当てること"
                     "（start_page/end_pageは1から総ページまで連続・重複なし）。"
                     '出力JSON: {"chapters":[{"chapter_no":1,"title":"章タイトル","start_page":1,"end_page":10}]}',
@@ -777,7 +770,9 @@ def _do_generate_cqs(tid):
                             os.environ["GEMINI_API_KEY"] = line.split("=", 1)[1].strip().strip('"').strip("'")
             import google.genai as genai
             from google.genai import types
-            client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+            # timeout未設定だと応答待ちのまま無限にハングしうるため必ず設定する（ミリ秒単位）
+            client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"),
+                                  http_options=types.HttpOptions(timeout=120000))
             model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 
             _task_update(tid, 10, "Wikiページを読込中…")
@@ -817,7 +812,8 @@ def _do_generate_cqs(tid):
                 if any(i["id"] == cid for i in REVIEW_ITEMS):
                     continue
                 REVIEW_ITEMS.append({
-                    "id": cid, "title": cq.get("question", "")[:60],
+                    # [:60] で切ると質問が文の途中で途切れ、検証・表示の双方が壊れる（表示側でCSS省略する）
+                    "id": cid, "title": cq.get("question", ""),
                     "description": cq.get("question", ""),
                     "expected_answer": cq.get("expected_answer", cq.get("answer_shape", "")),
                     "type": cq.get("type", "manual"),
@@ -953,7 +949,9 @@ def generate_ontology():
                             os.environ["GEMINI_API_KEY"] = line.split("=", 1)[1].strip().strip('"').strip("'")
             import google.genai as genai
             from google.genai import types
-            client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+            # timeout未設定だと応答待ちのまま無限にハングしうるため必ず設定する（ミリ秒単位）
+            client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"),
+                                  http_options=types.HttpOptions(timeout=120000))
             model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 
             _task_update(tid, 10, "QAからオントロジー定義を生成中…（Step 1/2）")
@@ -992,7 +990,7 @@ def generate_ontology():
                 "  - 例: 「15,500円/月」→ target_class: Allowance, target_property: amount\n"
                 "  - 例: 「併給不可」→ target_class: Service, target_property: mutually_exclusive_with\n"
                 "  target_class は必ず classes の name のいずれかにしてください。該当するクラスがない場合は target_class を空文字にしてください。\n"
-                "【命名】各クラス・プロパティ・関係には name（英語の物理名＝識別子）と label（その日本語論理名＝人が読む名称、例: 身体障害者手帳）を必ず両方付けてください。\n\n"
+                "【命名】各クラス・プロパティ・関係には name（英語の物理名＝識別子）と label（その日本語論理名＝人が読む名称、例: name=item_category, label=品目区分）を必ず両方付けてください。\n\n"
                 "出力JSON: {\"classes\":[{\"name\",\"label\",\"description\",\"evidence\",\"properties\":[{\"name\",\"label\",\"type\",\"required\"}]}],\"relationships\":[{\"name\",\"label\",\"from\",\"to\",\"description\",\"evidence\"}],\"constraints\":[{\"target_class\":\"クラス名\",\"target_property\":\"プロパティ名|空\",\"target_entity\":\"ID|空\",\"description\":\"制約の説明\",\"value\":\"制約値\",\"unit\":\"単位|空\",\"source\":\"出典\"}]}\n\n"
                 f"【QA（{cq_source_note}）】\n{cq_text[:8000]}{trace_block[:6000]}\n\n【LLM-Wiki】\n{wiki_ctx}"
             )
@@ -1184,6 +1182,17 @@ def get_ontology_definition():
     return JSONResponse(content=generated_ontology)
 
 
+@app.get("/api/meta")
+def get_meta():
+    """このプロジェクトの表示名（.env の KB_TITLE/KB_LABEL）。チャット画面のタイトル・見出しなど、
+    ドメイン名をHTMLに直書きせず動的に反映するために使う（別プロジェクトへforkする際は.envの変更だけで済む）。"""
+    _load_env_file()
+    return JSONResponse({
+        "kb_title": os.environ.get("KB_TITLE", KB_TITLE),
+        "kb_label": os.environ.get("KB_LABEL", KB_LABEL),
+    })
+
+
 @app.get("/api/ontology/labels")
 def get_ontology_labels():
     """物理名→日本語論理名の対応表（各UIが英語物理名に論理名を併記するために使う）。"""
@@ -1255,7 +1264,7 @@ def _do_ontology_bootstrap(tid):
                 "このドメインのオントロジー定義を生成する。QA（質問）はまだ使わない。"
                 "Wikiに現れる主要な概念・エンティティ・属性・関連から、クラス・プロパティ・関係・制約を抽出する。"
                 "【命名】各クラス・プロパティ・関係には name（英語の物理名＝PascalCase等の識別子）と "
-                "label（その日本語論理名＝人が読む名称、例: 身体障害者手帳）を必ず両方付ける。"
+                "label（その日本語論理名＝人が読む名称、例: name=item_category, label=品目区分）を必ず両方付ける。"
                 "各要素の evidence には根拠にしたWikiページのスラッグ（例: 02-notebooks, key-contacts）を記す。"
             )
             user_p = (
@@ -1429,7 +1438,7 @@ def _cy_map(d):
 
 def build_cypher(kg):
     lines = [
-        "// 文京区障害者福祉 ナレッジグラフ（オントロジー定義に沿ってLLM-Wikiから抽出）",
+        f"// {KB_TITLE} ナレッジグラフ（オントロジー定義に沿ってLLM-Wikiから抽出）",
         "// 実行例: cypher-shell -u neo4j -p <password> -f neo4j_import.cypher",
         "//     または Neo4j Browser に貼り付けて実行",
         "",
@@ -1490,6 +1499,114 @@ def push_to_neo4j(kg):
         return {"connected": False, "message": f"Neo4j未接続（{uri}）: {ex}. Cypher/JSONは出力済みなので後からロード可能。"}
 
 
+# ── KG抽出のID安定化（ドメイン非依存）──
+# 抽出はページをバッチ（20件ずつ）に分けてLLMを繰り返し呼ぶため、同じ実体が複数の
+# バッチにまたがって言及されると、バッチごとに独立したLLM呼び出しが互いを知らないまま
+# 別々のID（例: svc_futon_drying_disinfection と svc_futon_drying）を付けてしまい、
+# 同一実体が重複ノードとして分裂することがあった。ここでは「クラス＋正規化した名前」から
+# 決定的にIDを算出し直すことで、どのバッチ・どの実行でも同じ実体には同じIDが付くようにする。
+# ラベル名（クラス名）と名前の正規化だけを使い、ドメインの語彙には一切依存しない。
+def _normalize_entity_key(name):
+    s = unicodedata.normalize("NFKC", str(name or "")).strip()
+    return re.sub(r'\s+', '', s)
+
+def _stable_node_id(labels, name):
+    label = (labels or ["Entity"])[0] if labels else "Entity"
+    label_slug = re.sub(r'[^A-Za-z0-9]', '', str(label)) or "Entity"
+    key = _normalize_entity_key(name)
+    if not key:
+        return None
+    h = hashlib.md5(key.encode("utf-8")).hexdigest()[:10]
+    return f"{label_slug.lower()}_{h}"
+
+def _merge_node_props(old_props, new_props):
+    """複数バッチ/複数回の抽出で同じ実体に行き当たった際のプロパティ統合。
+    source はスラッグの和集合（重複除去・出現順維持）、他のキーは値が空でない方・より情報量の
+    多い方を残す簡易ヒューリスティック。"""
+    merged = dict(old_props or {})
+    for k, v in (new_props or {}).items():
+        if v in (None, ""):
+            continue
+        if k == "source":
+            old_srcs = [s.strip() for s in str(merged.get("source", "")).split(",") if s.strip()]
+            new_srcs = [s.strip() for s in str(v).split(",") if s.strip()]
+            merged["source"] = ", ".join(dict.fromkeys(old_srcs + new_srcs))
+        elif not merged.get(k) or len(str(v)) > len(str(merged[k])):
+            merged[k] = v
+    return merged
+
+def _extract_kg_batch(client, model, sys_instr, class_block, rel_block, batch_pages, extra_note=""):
+    """1バッチ(ページ集合)をLLMで抽出し、(nodes_dict, edges_list, error) を返す。
+    nodes_dict は 決定的ID -> {id,labels,props} のマージ済み辞書、edges_list は [{from,to,type,props}]。
+    _generate_json_robust を使うため、以前のように応答が壊れたJSONだった際に無言で0件になることがない
+    （壊れていた場合は error にメッセージが入り、呼び出し側でログ・可視化できる）。"""
+    batch_ctx = "\n\n".join(f"## {name}\n{content}" for name, content in batch_pages)
+    prompt = "ナレッジグラフ構築:\n" + class_block[:3000] + "\n" + rel_block[:2000] + extra_note + "\n" + batch_ctx
+    nodes_by_id, edges_all, error = {}, [], None
+    try:
+        kg_part = _generate_json_robust(client, model, sys_instr + "\n\n" + prompt)
+        if not isinstance(kg_part, dict):
+            kg_part = {}
+    except Exception as ex:
+        kg_part = {}
+        error = f"{type(ex).__name__}: {ex}"
+    # LLMが割り当てたIDはバッチ間で揺れる（同じ実体でも別IDになりうる）ため、
+    # クラス＋正規化した名前から決定的なIDへ振り直してから統合する。
+    id_remap = {}
+    for n in (kg_part.get("nodes") or []):
+        old_id = n.get("id")
+        props = n.get("props") or {}
+        new_id = _stable_node_id(n.get("labels"), props.get("name")) or old_id
+        if not new_id:
+            continue
+        if old_id:
+            id_remap[old_id] = new_id
+        if new_id in nodes_by_id:
+            nodes_by_id[new_id]["props"] = _merge_node_props(nodes_by_id[new_id].get("props"), props)
+        else:
+            nodes_by_id[new_id] = {"id": new_id, "labels": n.get("labels"), "props": props}
+    for e in (kg_part.get("edges") or []):
+        ef = id_remap.get(e.get("from"), e.get("from"))
+        et_ = id_remap.get(e.get("to"), e.get("to"))
+        if not (ef and et_ and e.get("type")):
+            continue
+        edges_all.append({"from": ef, "to": et_, "type": e.get("type"), "props": e.get("props") or {}})
+    return nodes_by_id, edges_all, error
+
+def _compute_missing_wiki(kg, md_files):
+    """このKGのどのノードの source にも登場しない Wiki ページのスラッグ一覧
+    （＝抽出漏れの可能性がある未カバーページ）。"""
+    covered = set()
+    for n in (kg or {}).get("nodes", []):
+        for s in _slugs_from((n.get("props") or {}).get("source")):
+            covered.add(s)
+    all_slugs = [os.path.basename(f)[:-3] for f in md_files]
+    return [s for s in all_slugs if s not in covered]
+
+def _push_kg_to_neo4j(kg):
+    """kg(nodes/edges)をNeo4jへまっさらに投入する（全削除してから入れ直す）。
+    戻り値: (connected: bool, message: str)"""
+    try:
+        from neo4j import GraphDatabase
+        ndriver = GraphDatabase.driver(os.environ.get("NEO4J_URI", "bolt://localhost:7687"),
+                                        auth=(os.environ.get("NEO4J_USER", "neo4j"), os.environ.get("NEO4J_PASSWORD", "password123")))
+        n_edges_pushed = 0
+        with ndriver.session(database="neo4j") as session:
+            session.run("MATCH (n) DETACH DELETE n")
+            for n in kg["nodes"]:
+                labels = ":".join(list(n["labels"]) + ["Entity"])
+                session.run(f"MERGE (n:{labels} {{id: $id}}) SET n += $props",
+                            id=n["id"], props={k: json.dumps(v, ensure_ascii=False) if isinstance(v, (dict, list)) else v for k, v in n.get("props", {}).items()})
+            for e in kg["edges"]:
+                et = re.sub(r'[^A-Za-z0-9_]', '', str(e.get("type") or "REL")) or "REL"
+                r = session.run(f"MATCH (a {{id: $fid}}), (b {{id: $tid}}) MERGE (a)-[:`{et}`]->(b) RETURN count(*) AS c",
+                                fid=e["from"], tid=e["to"]).single()
+                n_edges_pushed += (r["c"] if r else 0)
+        ndriver.close()
+        return True, f"Neo4jに投入完了（{len(kg['nodes'])}ノード / {n_edges_pushed}エッジ）"
+    except Exception as neo_ex:
+        return False, f"Neo4j投入スキップ（{neo_ex}）"
+
 def _do_extract_kg(tid):
     """3.1 オントロジー定義に沿って、LLM-Wikiから実体を抽出する（3.1画面／一括実行から共有）。"""
     global generated_ontology, validation_results
@@ -1506,9 +1623,12 @@ def _do_extract_kg(tid):
                 with open(env_path, encoding="utf-8") as f:
                     for line in f:
                         line = line.strip()
+                        # setdefault: docker-compose の environment: が渡す NEO4J_URI（コンテナ内ネットワーク用の
+                        # bolt://neo4j:7687）を、.envのローカル開発用の値（bolt://localhost:7687等）で
+                        # 上書きしないようにする。これが原因でNeo4j投入が毎回失敗していた。
                         for key in ("GEMINI_API_KEY", "GEMINI_MODEL", "NEO4J_URI", "NEO4J_USER", "NEO4J_PASSWORD"):
                             if line.startswith(key + "="):
-                                os.environ[key] = line.split("=", 1)[1].strip().strip('"').strip("'")
+                                os.environ.setdefault(key, line.split("=", 1)[1].strip().strip('"').strip("'"))
 
             # Clear Neo4j
             _task_update(tid, 10, "既存データをクリア中…")
@@ -1535,7 +1655,9 @@ def _do_extract_kg(tid):
 
             import google.genai as genai
             from google.genai import types
-            client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+            # timeout未設定だと応答待ちのまま無限にハングしうるため必ず設定する（ミリ秒単位）
+            client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"),
+                                  http_options=types.HttpOptions(timeout=120000))
             model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
             classes = definition.get("classes", [])
             rels = definition.get("relationships", [])
@@ -1556,34 +1678,24 @@ def _do_extract_kg(tid):
             batch_size = 20
             n_batches = max(1, (len(pages) - 1) // batch_size + 1)
             nodes_by_id, edges_all, seen_edge = {}, [], set()
+            batch_errors = []
             for bi in range(0, len(pages), batch_size):
                 batch = pages[bi:bi + batch_size]
-                batch_ctx = "\n\n".join(f"## {name}\n{content}" for name, content in batch)
                 prog = 25 + int(bi / max(1, len(pages)) * 60)
                 _task_update(tid, prog, f"バッチ{bi // batch_size + 1}/{n_batches} 実体抽出中…")
-                prompt = "ナレッジグラフ構築:\n" + class_block[:3000] + "\n" + rel_block[:2000] + "\n" + batch_ctx
-                try:
-                    kg_part = json.loads(client.models.generate_content(
-                        model=model, contents=sys_instr + "\n\n" + prompt,
-                        config=types.GenerateContentConfig(response_mime_type="application/json")
-                    ).text)
-                    if isinstance(kg_part, str):
-                        kg_part = json.loads(kg_part)
-                except Exception:
-                    kg_part = {}
-                if not isinstance(kg_part, dict):
-                    kg_part = {}
-                for n in (kg_part.get("nodes") or []):
-                    nid = n.get("id")
-                    if not nid:
-                        continue
+                bnodes, bedges, err = _extract_kg_batch(client, model, sys_instr, class_block, rel_block, batch)
+                if err:
+                    # 以前はここで例外が無言で握りつぶされ、そのバッチの全ページ(最大20件)が
+                    # 気づかれないまま0件のまま残っていた。ログに残し、後段の未カバー検出でも拾えるようにする。
+                    batch_errors.append({"batch": bi // batch_size + 1, "pages": [p[0] for p in batch], "error": err})
+                for nid, n in bnodes.items():
                     if nid in nodes_by_id:
-                        nodes_by_id[nid].setdefault("props", {}).update(n.get("props") or {})
+                        nodes_by_id[nid]["props"] = _merge_node_props(nodes_by_id[nid].get("props"), n.get("props"))
                     else:
                         nodes_by_id[nid] = n
-                for e in (kg_part.get("edges") or []):
-                    key = (e.get("from"), e.get("to"), e.get("type"))
-                    if not all(key) or key in seen_edge:
+                for e in bedges:
+                    key = (e["from"], e["to"], e["type"])
+                    if key in seen_edge:
                         continue
                     seen_edge.add(key)
                     edges_all.append(e)
@@ -1598,34 +1710,18 @@ def _do_extract_kg(tid):
             with open(os.path.join(HERE, "kg_extracted.json"), "w", encoding="utf-8") as f: json.dump(kg, f, ensure_ascii=False, indent=2)
 
             _task_update(tid, 90, "Neo4j投入中…")
-            neo_connected = False
-            n_edges_pushed = 0
-            try:
-                from neo4j import GraphDatabase
-                ndriver = GraphDatabase.driver(os.environ.get("NEO4J_URI", "bolt://localhost:7687"),
-                                                auth=(os.environ.get("NEO4J_USER", "neo4j"), os.environ.get("NEO4J_PASSWORD", "password123")))
-                with ndriver.session(database="neo4j") as session:
-                    # まっさらに（専用KGなので全ノード削除してから入れ直す）
-                    session.run("MATCH (n) DETACH DELETE n")
-                    for n in kg["nodes"]:
-                        labels = ":".join(list(n["labels"]) + ["Entity"])
-                        # SET n += で id を保持（= だと MERGE で付けた id が消えてエッジが張れない）
-                        session.run(f"MERGE (n:{labels} {{id: $id}}) SET n += $props",
-                                    id=n["id"], props={k: json.dumps(v, ensure_ascii=False) if isinstance(v,(dict,list)) else v for k,v in n.get("props",{}).items()})
-                    for e in kg["edges"]:
-                        et = re.sub(r'[^A-Za-z0-9_]', '', str(e.get("type") or "REL")) or "REL"
-                        r = session.run(f"MATCH (a {{id: $fid}}), (b {{id: $tid}}) MERGE (a)-[:`{et}`]->(b) RETURN count(*) AS c",
-                                        fid=e["from"], tid=e["to"]).single()
-                        n_edges_pushed += (r["c"] if r else 0)
-                ndriver.close()
-                neo_connected = True
-                neo_msg = f"Neo4jに投入完了（{len(kg['nodes'])}ノード / {n_edges_pushed}エッジ）"
-            except Exception as neo_ex:
-                neo_msg = f"Neo4j投入スキップ（{neo_ex}）"
+            neo_connected, neo_msg = _push_kg_to_neo4j(kg)
 
+            uncovered = _compute_missing_wiki(kg, md_files)
             generated_ontology["kg_extracted"] = kg
-            generated_ontology["kg_meta"] = {"nodes": len(kg["nodes"]), "edges": len(kg["edges"]), "neo4j": {"connected": neo_connected, "message": neo_msg}}
-            _task_update(tid, 100, "完了")
+            generated_ontology["kg_meta"] = {
+                "nodes": len(kg["nodes"]), "edges": len(kg["edges"]),
+                "neo4j": {"connected": neo_connected, "message": neo_msg},
+                "batch_errors": batch_errors,
+                "uncovered_pages": uncovered,
+            }
+            msg = "完了" if not batch_errors else f"完了（{len(batch_errors)}バッチで抽出失敗。未カバー{len(uncovered)}ページ）"
+            _task_update(tid, 100, msg)
             _task_done(tid)
             save_state()
     except Exception as ex:
@@ -1637,6 +1733,127 @@ def extract_kg():
     tid = _task_start("kg_extract", total=100)
     threading.Thread(target=_do_extract_kg, args=(tid,), daemon=True).start()
     return {"ok": True, "task_id": tid, "message": "抽出を開始しました。進捗は /api/task/{task_id} で確認できます。"}
+
+
+def _do_extract_missing(tid):
+    """①の安全網: 前回の抽出で1件もノードが得られなかったWikiページだけを対象に、
+    より小さいバッチ・明示的な指示で再抽出し、既存KGにマージする
+    （決定的ID＋プロパティマージにより、既存ノードとの重複は自動的に統合される）。"""
+    global generated_ontology
+    try:
+        kg = generated_ontology.get("kg_extracted") or {"nodes": [], "edges": []}
+        definition = generated_ontology.get("definition")
+        if not definition or not isinstance(definition, dict) or not definition.get("classes"):
+            _task_done(tid, "先にオントロジー定義を生成してください")
+            return
+
+        _task_update(tid, 5, "未カバーページを検出中…")
+        wiki_dir = os.path.join(HERE, "..", "step1_data", "wiki")
+        md_files = sorted(glob.glob(os.path.join(wiki_dir, "*.md")))
+        md_files = [f for f in md_files if os.path.basename(f) != "index.md"]
+        missing_slugs = set(_compute_missing_wiki(kg, md_files))
+        if not missing_slugs:
+            generated_ontology.setdefault("kg_meta", {})["uncovered_pages"] = []
+            _task_update(tid, 100, "未カバーページはありません")
+            _task_done(tid)
+            save_state()
+            return
+
+        pages = []
+        for mf in md_files:
+            name = os.path.basename(mf)[:-3]
+            if name not in missing_slugs:
+                continue
+            with open(mf, encoding="utf-8") as f:
+                content = f.read()
+            content = re.sub(r'^---\n.*?\n---\n', '', content, flags=re.DOTALL)
+            pages.append((name, content))
+
+        _load_env_file()
+        import google.genai as genai
+        from google.genai import types
+        client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"),
+                              http_options=types.HttpOptions(timeout=120000))
+        model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+        classes = definition.get("classes", [])
+        rels = definition.get("relationships", [])
+        class_block = "\n".join(f"- {c.get('name')}（{c.get('label','')}）: / props: " + ", ".join(p.get("name", "") for p in (c.get("properties") or [])) for c in classes)
+        rel_block = "\n".join(f"- ({r.get('from')}) -[{r.get('name')}（{r.get('label','')}）]-> ({r.get('to')})" for r in rels)
+        sys_instr = ("あなたはナレッジグラフ構築エージェントです。以下のオントロジー定義に従いLLM-Wikiから実体を抽出しnodes/edgesを生成してください。"
+            "出力は{\"nodes\":[{\"id\",\"labels\",\"props\"}],\"edges\":[{\"from\",\"to\",\"type\"}]}のJSONのみ。idはsvc_/contact_/nb_等の命名規則。"
+            "nodeのlabelsは上記クラスのname（英語物理名）を用いること。nodeのpropsには必ず name（実体の日本語名）, source, "
+            "type_label（このノードの型クラスの日本語論理名＝上記クラスの（）内の名称）を含めること。"
+            "【最重要】source には、その実体の根拠となった LLM-Wiki ページの『スラッグ』を入れること"
+            "（本文中の見出し『## 名前』のその名前を厳密に使う）。複数ある場合はカンマ区切り。"
+            "『LLM-Wiki』のような総称や説明文は絶対に入れない。可能な限り金額・期間・必要書類・条件などの具体値も props に含めること。"
+            "edgeのtypeは上記関係のname（英語物理名）を用いること。")
+        # 通常抽出(20ページ/バッチ)より大幅に小さくし、1ページあたりの見落としリスクを下げる。
+        # さらに「必ず最低1件」と明示することで、地味・短いページが素通りされにくくする。
+        extra_note = ("\n【今回は前回の抽出で見落とされたページの再抽出です。以下の各ページから必ず最低1件は"
+                      "エンティティを抽出してください。適切なクラスが無ければ、ページの主題そのもの"
+                      "（制度名・窓口名・センター名など）を最低限のエンティティとしてください。】\n")
+
+        nodes_by_id = {n["id"]: n for n in kg.get("nodes", [])}
+        edges_all = list(kg.get("edges", []))
+        seen_edge = {(e.get("from"), e.get("to"), e.get("type")) for e in edges_all}
+
+        batch_size = 4
+        n_batches = max(1, (len(pages) - 1) // batch_size + 1)
+        batch_errors = []
+        for bi in range(0, len(pages), batch_size):
+            batch = pages[bi:bi + batch_size]
+            prog = 10 + int(bi / max(1, len(pages)) * 70)
+            _task_update(tid, prog, f"未カバー再抽出 バッチ{bi // batch_size + 1}/{n_batches}…")
+            bnodes, bedges, err = _extract_kg_batch(client, model, sys_instr, class_block, rel_block, batch, extra_note)
+            if err:
+                batch_errors.append({"batch": bi // batch_size + 1, "pages": [p[0] for p in batch], "error": err})
+            for nid, n in bnodes.items():
+                if nid in nodes_by_id:
+                    nodes_by_id[nid]["props"] = _merge_node_props(nodes_by_id[nid].get("props"), n.get("props"))
+                else:
+                    nodes_by_id[nid] = n
+            for e in bedges:
+                key = (e["from"], e["to"], e["type"])
+                if key in seen_edge:
+                    continue
+                seen_edge.add(key)
+                edges_all.append(e)
+
+        kg2 = {"nodes": list(nodes_by_id.values()), "edges": edges_all}
+        ids = {n.get("id") for n in kg2["nodes"]}
+        kg2["edges"] = [e for e in kg2["edges"] if e.get("from") in ids and e.get("to") in ids]
+
+        _task_update(tid, 85, "Cypher出力＋保存中…")
+        from kg_utils import build_cypher
+        cypher = build_cypher(kg2)
+        with open(os.path.join(HERE, "neo4j_import.cypher"), "w", encoding="utf-8") as f: f.write(cypher)
+        with open(os.path.join(HERE, "kg_extracted.json"), "w", encoding="utf-8") as f: json.dump(kg2, f, ensure_ascii=False, indent=2)
+
+        _task_update(tid, 92, "Neo4j投入中…")
+        neo_connected, neo_msg = _push_kg_to_neo4j(kg2)
+
+        remaining_missing = _compute_missing_wiki(kg2, md_files)
+        generated_ontology["kg_extracted"] = kg2
+        generated_ontology["kg_meta"] = {
+            "nodes": len(kg2["nodes"]), "edges": len(kg2["edges"]),
+            "neo4j": {"connected": neo_connected, "message": neo_msg},
+            "batch_errors": batch_errors,
+            "uncovered_pages": remaining_missing,
+            "last_action": f"未カバー{len(pages)}件を再抽出（残り未カバー{len(remaining_missing)}件）",
+        }
+        _task_update(tid, 100, f"完了（{len(pages)}件を再抽出、残り未カバー{len(remaining_missing)}件）")
+        _task_done(tid)
+        save_state()
+    except Exception as ex:
+        _task_done(tid, str(ex))
+
+@app.post("/api/kg/extract-missing")
+def extract_missing_kg():
+    """①の安全網: 前回の抽出で1件もノードが得られなかったWikiページだけを、
+    小さいバッチ・明示的な指示で再抽出し、既存KGにマージする。"""
+    tid = _task_start("kg_extract_missing", total=100)
+    threading.Thread(target=_do_extract_missing, args=(tid,), daemon=True).start()
+    return {"ok": True, "task_id": tid, "message": "未カバーページの再抽出を開始しました。"}
 
 
 @app.get("/api/kg/extracted")
@@ -1658,7 +1875,12 @@ def get_kg_cypher():
 
 
 def _load_env_file():
-    """pipeline/.env の GEMINI/NEO4J 設定を os.environ に反映（既に設定済みでも上書き）。"""
+    """pipeline/.env の GEMINI/NEO4J 設定を os.environ に反映する（既に設定済みのキーは上書きしない）。
+    Docker環境ではdocker-compose.ymlのenvironment:がNEO4J_URI等をコンテナ内ネットワーク用の
+    正しい値（bolt://neo4j:7687等）で明示的に上書きしている。ここで無条件に.envの値（ローカル開発用の
+    bolt://localhost:7687等）で再上書きすると、コンテナ内からNeo4jに接続できなくなる不具合があった。
+    setdefault方式にすることで、Docker実行時はdocker-compose側の値を優先しつつ、
+    .env単体で動かすローカル実行時はこれまで通り.envの値が使われる。"""
     env_path = os.path.join(HERE, "..", ".env")
     if not os.path.isfile(env_path):
         return
@@ -1670,7 +1892,7 @@ def _load_env_file():
             for key in ("GEMINI_API_KEY", "GEMINI_MODEL", "GEMINI_EMBED_MODEL",
                         "NEO4J_URI", "NEO4J_USER", "NEO4J_PASSWORD"):
                 if line.startswith(key + "="):
-                    os.environ[key] = line.split("=", 1)[1].strip().strip('"').strip("'")
+                    os.environ.setdefault(key, line.split("=", 1)[1].strip().strip('"').strip("'"))
 
 
 @app.get("/api/kg/neo4j")
@@ -1724,18 +1946,64 @@ def _genai():
     _load_env_file()
     if "client" not in _GENAI_CACHE:
         import google.genai as genai
+        from google.genai import types
         _GENAI_CACHE["genai"] = genai
-        _GENAI_CACHE["client"] = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+        # timeout未設定だと応答待ちのまま無限にハングしうるため必ず設定する（ミリ秒単位）。
+        # 実際に3-1のKG抽出バッチ処理がこれで無応答のまま停止した事例があった。
+        _GENAI_CACHE["client"] = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"),
+                                              http_options=types.HttpOptions(timeout=120000))
     _GENAI_CACHE["model"] = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
     return _GENAI_CACHE["genai"], _GENAI_CACHE["client"], _GENAI_CACHE["model"]
 
-def _llm_json(sys_prompt, user_prompt):
-    genai, client, model = _genai()
+def _extract_json_text(text):
+    """コードフェンス(```json ... ```)を剥がす。それ以外は素通し。"""
+    text = (text or "").strip()
+    m = re.match(r'^```(?:json)?\s*(.*?)\s*```$', text, re.DOTALL)
+    return m.group(1).strip() if m else text
+
+def _parse_json_loose(text):
+    """response_mime_type=application/json を指定してもなお、LLMが文中の改行やMarkdown引用を
+    そのままJSON文字列に埋め込んで壊れたJSONを返すことがある（例: 'Expecting , delimiter'）。
+    ここで段階的に緩く解釈する。"""
+    text = _extract_json_text(text)
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+    try:
+        # strict=False: 文字列内の生の制御文字(未エスケープの改行等)を許容する
+        return json.loads(text, strict=False)
+    except json.JSONDecodeError:
+        pass
+    m = re.search(r'\{.*\}', text, re.DOTALL)
+    if m:
+        return json.loads(m.group(0), strict=False)
+    raise json.JSONDecodeError("no JSON object found", text, 0)
+
+def _generate_json_robust(client, model, contents):
+    """generate_content(response_mime_type=json) を呼び、緩いJSONパースで解釈する。
+    それでも壊れていれば、1回だけ『JSON修復』をLLMに依頼して再パースする。
+    Judge/Planner/KG抽出バッチなど、JSONを要求するあらゆる呼び出しで共用する
+    （以前はKG抽出だけこの堅牢化が無く、失敗したバッチが無言で0件になっていた）。"""
     from google.genai import types
     r = client.models.generate_content(
-        model=model, contents=f"{sys_prompt}\n\n{user_prompt}",
+        model=model, contents=contents,
         config=types.GenerateContentConfig(response_mime_type="application/json"))
-    return json.loads(r.text)
+    try:
+        return _parse_json_loose(r.text)
+    except json.JSONDecodeError:
+        # 1回だけ「壊れたJSONの修復」をLLMに依頼して再パース（意味は変えず整形のみ求める）
+        fix = client.models.generate_content(
+            model=model,
+            contents=("次のテキストは壊れたJSONです。中身の意味・値は変えずに、"
+                       "有効なJSON（1つのオブジェクトまたは配列）だけを出力してください。"
+                       "文字列内の改行は \\n にエスケープしてください。\n\n" + (r.text or "")),
+            config=types.GenerateContentConfig(response_mime_type="application/json"))
+        return _parse_json_loose(fix.text)
+
+def _llm_json(sys_prompt, user_prompt):
+    genai, client, model = _genai()
+    return _generate_json_robust(client, model, f"{sys_prompt}\n\n{user_prompt}")
 
 def _llm_text(sys_prompt, user_prompt):
     genai, client, model = _genai()
@@ -1814,16 +2082,150 @@ def _plan_query(question, labels, rel_types):
         hops = 1
     return (p.get("entities") or []), (p.get("keywords") or []), hops
 
-def _seed_nodes(nodes, entities, keywords):
-    terms = [t.strip().lower() for t in list(entities) + list(keywords) if t and str(t).strip()]
-    seeds = set()
+# ── 検索の絞り込み設定（文字数で切るのではなく「関連度で選ぶ」）──
+SEED_LIMIT = 40      # シードにする上位ノード数
+NODE_CAP = 30        # 回答プロンプトに載せるノードの上限件数
+WIKI_PAGE_LIMIT = 8  # 回答プロンプトに載せるWikiページの上限件数
+# 文字数予算は「安全網」。実際の絞り込みは上の件数(NODE_CAP / WIKI_PAGE_LIMIT)で行う。
+# 投入内容が関連度上位のみになったため、以前(8000/9000)より広く取っても無関係な文脈は増えない。
+FACTS_BUDGET = 12000  # ノード+エッジJSONの文字数予算（要素単位で詰め、途中で切らない）
+WIKI_BUDGET = 20000   # Wiki本文の文字数予算（ページ単位で詰め、途中で切らない）
+
+def _norm(s):
+    return str(s or "").strip().lower()
+
+# 「汎用すぎて検索の役に立たない語（1語で大半のノードがヒットしてしまう）」を、
+# 固定の語彙リストではなく、そのKG自身の分布から統計的に判定する。
+# 例えば障害福祉KGでは「障害者」が大半のノードに出現し検索の役に立たないが、これは
+# コードに書かれたドメイン知識ではなく、実行時にKGのノード群を数えて導かれる値なので、
+# 別ドメインのKG（例: 図書館・観光・社内規程）でもコード変更なしに同じ仕組みが機能する。
+STOPWORD_DF_THRESHOLD = 0.12  # ノードの12%以上にヒットする語は識別力が無いとみなす
+
+def _is_too_common(term, nodes, threshold=STOPWORD_DF_THRESHOLD):
+    if not nodes or not term:
+        return False
+    hit = 0
     for n in nodes:
-        nm = _node_name(n).lower()
-        hay = (nm + " " + " ".join(str(v) for v in (n.get("props") or {}).values())).lower()
-        for t in terms:
-            if t and (t in nm or nm in t or t in hay):
-                seeds.add(n["id"]); break
-    return seeds
+        hay = _norm(_node_name(n)) + " " + _norm(" ".join(str(v) for v in (n.get("props") or {}).values()))
+        if term in hay:
+            hit += 1
+            if hit / len(nodes) > threshold:
+                return True
+    return False
+
+def _query_terms(entities, keywords, nodes=None):
+    """検索語を正規化。短すぎる語と、KG内での出現頻度が高すぎる語（=識別力が無い語）を落とす。"""
+    terms = []
+    for t in list(entities) + list(keywords):
+        t = _norm(t)
+        if not t:
+            continue
+        if len(t) < 2:          # 1文字は「区」「都」等でノイズしか生まない
+            continue
+        if nodes is not None and _is_too_common(t, nodes):
+            continue
+        terms.append(t)
+    return list(dict.fromkeys(terms))   # 重複除去（順序維持）
+
+def _score_node(n, terms):
+    """質問語とノードの関連度。名前一致を最重視し、属性値の一致は補助的に加点する。
+    以前の『名前が検索語の部分文字列(nm in t)』『全プロパティへの部分一致』は
+    ほぼ全ノードにヒットしてしまうため廃止/限定した。"""
+    nm = _norm(_node_name(n))
+    props = n.get("props") or {}
+    body = _norm(" ".join(str(v) for k, v in props.items() if k not in ("source", "id")))
+    score = 0.0
+    for t in terms:
+        if t == nm:
+            score += 6.0
+        elif t in nm:
+            # 語がノード名に占める割合が高いほど確度が高い（短語の巻き込みを抑制）
+            score += 3.0 * min(1.0, len(t) / max(1, len(nm)))
+        elif len(nm) >= 3 and nm in t:
+            # 検索語が長いフレーズで、ノード名がその中に含まれる場合
+            # （例: 語「愛の手帳の判定」⊃ ノード名「愛の手帳」）。
+            # 旧実装はこれを無条件に許して「区」「都」等の短名で全ヒットしていたため、
+            # ノード名3文字以上に限定する。
+            score += 2.5
+        if len(t) >= 3 and t in body:   # 属性一致は3文字以上の語に限定
+            score += 1.0
+    return score
+
+def _seed_nodes(nodes, entities, keywords, question=None, limit=SEED_LIMIT):
+    """関連度スコア上位のノードだけをシードにする（部分一致の総なめを避ける）。
+    戻り値: (seedのidセット, {id: score})"""
+    terms = _query_terms(entities, keywords, nodes=nodes)
+    scored = []
+    for n in nodes:
+        s = _score_node(n, terms)
+        if s > 0:
+            scored.append((s, n["id"]))
+    if not scored and terms:
+        # 保険1: プランナーが長いフレーズしか返さなかった等で1件も当たらない場合、
+        # 語を2文字以上のトークンに分解して緩く再照合する（0件回答を避ける）。
+        subs = {w for t in terms for w in re.split(r'[\s、。・（）()「」]+', t) if len(w) >= 2}
+        subs = [w for w in subs if not _is_too_common(w, nodes)]
+        for n in nodes:
+            s = _score_node(n, subs)
+            if s > 0:
+                scored.append((s, n["id"]))
+    if not scored and question:
+        # 保険2（最終手段）: Plannerが entities/keywords を1つも返さなかった場合
+        # （質問が複雑・長文だと起きる）、語彙一致に一切頼らず、質問文とノード名の
+        # 埋め込み類似度で直接シードを選ぶ。Wikiページ選定と同じ仕組み。
+        scored = _seed_nodes_by_embedding(question, nodes, limit)
+    scored.sort(key=lambda x: (-x[0], x[1]))
+    seeds = {nid for _, nid in scored[:limit]}
+    return seeds, {nid: s for s, nid in scored}
+
+def _select_nodes(fnodes, terms, seeds, score_by_id, cap=NODE_CAP):
+    """近傍展開後のノードを関連度で並べ、上位capだけ残す。
+    シード（質問に直接マッチしたノード）を最優先し、次に展開先をスコア順。"""
+    ranked = []
+    for n in fnodes:
+        s = score_by_id.get(n["id"], 0.0) or _score_node(n, terms)
+        if n["id"] in seeds:
+            s += 10.0          # 質問に直接マッチしたものを必ず上位に
+        ranked.append((s, n))
+    ranked.sort(key=lambda x: (-x[0], str(x[1].get("id"))))
+    return [n for _, n in ranked[:cap]]
+
+def _pack_facts(fnodes, fedges, budget=FACTS_BUDGET):
+    """ノード/エッジを要素単位で文字数予算に詰める。JSONを途中で切らない（壊れたJSONを渡さない）。
+    以前は json.dumps(...)[:8000] と文字列を直接切っていたため、回答LLMには
+    途中で切れた不正なJSONが渡っていた。"""
+    kept, total = [], 24            # {"nodes": [], "edges": []} の枠ぶん
+    node_budget = budget * 0.8      # エッジぶんを残す
+    for n in fnodes:
+        s = json.dumps(n, ensure_ascii=False)
+        if kept and total + len(s) + 1 > node_budget:
+            break
+        kept.append(n); total += len(s) + 1
+    kept_ids = {n["id"] for n in kept}
+    kedges = []
+    for e in fedges:
+        if e["from"] not in kept_ids or e["to"] not in kept_ids:
+            continue
+        s = json.dumps(e, ensure_ascii=False)
+        if total + len(s) + 1 > budget:
+            break
+        kedges.append(e); total += len(s) + 1
+
+    # ── 構造的な曖昧さ検出（ドメイン非依存）──
+    # 投入ノードの中に「同じクラス」に属するものが複数あれば、それは回答LLMが混同しうる
+    # 候補群として明示する。プロパティの意味（値が何を表すか）は一切解釈せず、
+    # グラフのラベル一致だけで機械的に判定するため、対象ドメインを問わず動く。
+    groups = {}
+    for n in kept:
+        lbl = tuple(n.get("labels") or [])
+        if lbl:
+            groups.setdefault(lbl, []).append(n["id"])
+    same_class_groups = [{"labels": list(lbl), "ids": ids} for lbl, ids in groups.items() if len(ids) >= 2]
+
+    payload = {"nodes": kept, "edges": kedges}
+    if same_class_groups:
+        payload["same_class_groups"] = same_class_groups
+    return json.dumps(payload, ensure_ascii=False), kept, kedges
 
 def _expand(seeds, adj, hops):
     visited = set(seeds); frontier = set(seeds)
@@ -1843,17 +2245,234 @@ def _subgraph_facts(ids, by_id, edges):
     fedges = [e for e in edges if e["from"] in ids and e["to"] in ids]
     return fnodes, fedges
 
+def _wiki_dir():
+    return os.path.join(HERE, "..", "step1_data", "wiki")
+
+def _read_wiki(slug):
+    fp = os.path.join(_wiki_dir(), f"{slug}.md")
+    if not os.path.isfile(fp):
+        return None
+    with open(fp, encoding="utf-8") as f:
+        c = f.read()
+    return re.sub(r'^---\n.*?\n---\n', '', c, flags=re.DOTALL)
+
 def _load_wiki_pages(slugs):
-    wiki_dir = os.path.join(HERE, "..", "step1_data", "wiki")
+    """（互換用）指定スラッグの本文を読む。存在するものだけを返す。"""
     out = {}
     for slug in slugs:
-        fp = os.path.join(wiki_dir, f"{slug}.md")
-        if os.path.isfile(fp):
-            with open(fp, encoding="utf-8") as f:
-                c = f.read()
-            c = re.sub(r'^---\n.*?\n---\n', '', c, flags=re.DOTALL)
+        c = _read_wiki(slug)
+        if c is not None:
             out[slug] = c[:2500]
     return out
+
+# ── Wikiページの埋め込みキャッシュ（意味的類似度によるランキング用）──
+# 語の部分一致だけでは言い換え・同義語・英語スラッグとの表層不一致に弱く、
+# 正解ページが上位N件の枠から漏れることがあった。埋め込みは内容の意味を見るため、
+# 表現の違いに強い。ページ単位でハッシュ管理し、変更されたページだけ再計算する
+# （永続化: pipeline/step1_data/wiki_embeddings.json）。ドメイン知識は一切使わない。
+WIKI_EMB_PATH = os.path.join(HERE, "..", "step1_data", "wiki_embeddings.json")
+_wiki_emb_cache = None
+
+def _content_hash(text):
+    return hashlib.md5(text.encode("utf-8")).hexdigest()
+
+def _wiki_emb_load():
+    global _wiki_emb_cache
+    if _wiki_emb_cache is None:
+        if os.path.isfile(WIKI_EMB_PATH):
+            try:
+                with open(WIKI_EMB_PATH, encoding="utf-8") as f:
+                    _wiki_emb_cache = json.load(f)
+            except Exception:
+                _wiki_emb_cache = {"model": "", "pages": {}}
+        else:
+            _wiki_emb_cache = {"model": "", "pages": {}}
+    return _wiki_emb_cache
+
+def _wiki_emb_save():
+    if _wiki_emb_cache is not None:
+        with open(WIKI_EMB_PATH, "w", encoding="utf-8") as f:
+            json.dump(_wiki_emb_cache, f, ensure_ascii=False)
+
+def _embed_documents(texts):
+    genai, client, _ = _genai()
+    from google.genai import types
+    embed_model = os.environ.get("GEMINI_EMBED_MODEL", "gemini-embedding-001")
+    out = []
+    for i in range(0, len(texts), 50):
+        batch = texts[i:i + 50]
+        r = client.models.embed_content(
+            model=embed_model, contents=batch,
+            config=types.EmbedContentConfig(task_type="RETRIEVAL_DOCUMENT"))
+        out.extend(list(e.values) for e in r.embeddings)
+    return out
+
+def _embed_query(text):
+    genai, client, _ = _genai()
+    from google.genai import types
+    embed_model = os.environ.get("GEMINI_EMBED_MODEL", "gemini-embedding-001")
+    r = client.models.embed_content(
+        model=embed_model, contents=[text],
+        config=types.EmbedContentConfig(task_type="RETRIEVAL_QUERY"))
+    return list(r.embeddings[0].values)
+
+def _cosine(a, b):
+    n = min(len(a), len(b))
+    if n == 0:
+        return 0.0
+    dot = sum(a[i] * b[i] for i in range(n))
+    na = sum(x * x for x in a[:n]) ** 0.5
+    nb = sum(x * x for x in b[:n]) ** 0.5
+    return dot / (na * nb) if na and nb else 0.0
+
+def _ensure_wiki_embeddings(slug_text_pairs):
+    """候補スラッグの埋め込みをキャッシュに用意する（無ければ生成、本文が変わっていれば再生成）。
+    質問のたびに関係する候補だけを対象にするので軽く、繰り返し使ううちに自然とキャッシュが育つ。"""
+    cache = _wiki_emb_load()
+    embed_model = os.environ.get("GEMINI_EMBED_MODEL", "gemini-embedding-001")
+    if cache.get("model") != embed_model:
+        cache["pages"] = {}
+        cache["model"] = embed_model
+    pages = cache["pages"]
+    todo_slugs, todo_texts = [], []
+    for slug, text in slug_text_pairs:
+        h = _content_hash(text)
+        entry = pages.get(slug)
+        if entry and entry.get("hash") == h:
+            continue
+        todo_slugs.append(slug); todo_texts.append(text)
+    if todo_texts:
+        try:
+            vecs = _embed_documents(todo_texts)
+            for slug, text, vec in zip(todo_slugs, todo_texts, vecs):
+                pages[slug] = {"hash": _content_hash(text), "vec": vec}
+            _wiki_emb_save()
+        except Exception:
+            pass  # 埋め込み失敗時は語彙スコアのみにフォールバック（下の呼び出し側で自然に処理される）
+    return pages
+
+# ── KGノードの埋め込みキャッシュ（Plannerが検索語を1つも返せなかった場合の最終手段）──
+# 質問が複雑・長文だと、Planner LLMが entities/keywords を両方とも空で返すことがある。
+# その場合、語彙ベースの一致は何をやっても0件のままなので（検索語が無いため）、
+# Wikiページ選定と同じ仕組み（質問文とノード名の埋め込み類似度）でノードを直接探す。
+KG_NODE_EMB_PATH = os.path.join(HERE, "..", "step1_data", "kg_node_embeddings.json")
+_kg_node_emb_cache = None
+
+def _kg_node_emb_load():
+    global _kg_node_emb_cache
+    if _kg_node_emb_cache is None:
+        if os.path.isfile(KG_NODE_EMB_PATH):
+            try:
+                with open(KG_NODE_EMB_PATH, encoding="utf-8") as f:
+                    _kg_node_emb_cache = json.load(f)
+            except Exception:
+                _kg_node_emb_cache = {"model": "", "nodes": {}}
+        else:
+            _kg_node_emb_cache = {"model": "", "nodes": {}}
+    return _kg_node_emb_cache
+
+def _kg_node_emb_save():
+    if _kg_node_emb_cache is not None:
+        with open(KG_NODE_EMB_PATH, "w", encoding="utf-8") as f:
+            json.dump(_kg_node_emb_cache, f, ensure_ascii=False)
+
+def _ensure_kg_node_embeddings(id_name_pairs):
+    """ノードの埋め込みをキャッシュに用意する（無ければ生成、名前が変わっていれば再生成）。
+    KG全体を毎回埋め込むと重いが、内容ハッシュで差分だけ計算するため、初回以降は軽い。"""
+    cache = _kg_node_emb_load()
+    embed_model = os.environ.get("GEMINI_EMBED_MODEL", "gemini-embedding-001")
+    if cache.get("model") != embed_model:
+        cache["nodes"] = {}
+        cache["model"] = embed_model
+    store = cache["nodes"]
+    todo_ids, todo_texts = [], []
+    for nid, name in id_name_pairs:
+        h = _content_hash(name)
+        entry = store.get(nid)
+        if entry and entry.get("hash") == h:
+            continue
+        todo_ids.append(nid); todo_texts.append(name)
+    if todo_texts:
+        try:
+            vecs = _embed_documents(todo_texts)
+            for nid, text, vec in zip(todo_ids, todo_texts, vecs):
+                store[nid] = {"hash": _content_hash(text), "vec": vec}
+            _kg_node_emb_save()
+        except Exception:
+            pass  # 埋め込み失敗時は何も返せない（呼び出し側で空扱いになる）
+    return store
+
+def _seed_nodes_by_embedding(question, nodes, limit):
+    """語彙一致が全滅した場合の最終手段。質問文とノード名の意味的類似度だけでシードを選ぶ。
+    戻り値: [(score, id), ...]（_seed_nodes の scored と同じ形）"""
+    pairs = [(n["id"], _node_name(n)) for n in nodes]
+    store = _ensure_kg_node_embeddings(pairs)
+    try:
+        qvec = _embed_query(question)
+    except Exception:
+        return []
+    scored = []
+    for nid, _name in pairs:
+        entry = store.get(nid)
+        if not entry:
+            continue
+        sim = _cosine(qvec, entry["vec"])
+        if sim > 0.3:   # 無関係なノードまで拾わない最低限のしきい値
+            scored.append((sim * 6.0, nid))   # 語彙一致スコア(最大6.0)と同程度のスケールに揃える
+    return scored
+
+def _select_wiki(slugs, terms, slug_score, question, limit=WIKI_PAGE_LIMIT, budget=WIKI_BUDGET):
+    """関連度上位のWikiページだけを本文としてプロンプトに載せる。
+    以前は sorted()＝アルファベット順に全ページを連結してから [:9000] で切っていたため、
+    『名前が若いページ』だけが残り、正解ページが落ちていた。ここでは
+    (1) 質問文とページ本文の埋め込み類似度（意味ベース・主信号）
+    (2) KG上の関連ノードのスコア／スラッグ・見出しの語一致（補助信号）
+    で並べ替え、上位limit件をページ単位で予算に詰める（ページを途中で切らない）。
+    戻り値: (delivered_dict, loaded_count)"""
+    cands = []
+    for slug in slugs:
+        c = _read_wiki(slug)
+        if c is None:
+            continue
+        cands.append((slug, c))
+    loaded = len(cands)
+    if not cands:
+        return {}, 0
+
+    EMB_CHARS = 4000
+    pages_emb = _ensure_wiki_embeddings([(slug, c[:EMB_CHARS]) for slug, c in cands])
+    try:
+        qvec = _embed_query(question)
+    except Exception:
+        qvec = None
+
+    scored = []
+    for slug, c in cands:
+        s = 0.0
+        entry = pages_emb.get(slug)
+        if qvec is not None and entry:
+            s += 10.0 * _cosine(qvec, entry["vec"])   # 主信号: 意味的類似度
+        s += 0.5 * float(slug_score.get(slug, 0.0))   # 補助信号: KG関連ノードからの継承スコア
+        sl = _norm(slug)
+        head = _norm(c[:600])          # 見出し付近の一致は本文全体より信頼できる
+        for t in terms:
+            if t in sl:
+                s += 0.3
+            if t in head:
+                s += 0.2
+        scored.append((s, slug, c))
+    # スコア降順（同点はスラッグ名で安定化）。※アルファベット順の偏りをここで解消
+    scored.sort(key=lambda x: (-x[0], x[1]))
+
+    delivered, total = {}, 0
+    for s, slug, c in scored[:limit]:
+        text = c[:2500]
+        chunk = len(text) + len(slug) + 6
+        if delivered and total + chunk > budget:
+            break
+        delivered[slug] = text
+        total += chunk
+    return delivered, loaded
 
 def _naive_rag(question):
     """チャットの naive RAG (8790 の /api/rag) を呼ぶ。PDFチャンクのベクトル検索→LLM回答（KG非依存）。
@@ -1876,26 +2495,155 @@ def _naive_rag(question):
     return {"answer": f"(ナイーブRAG取得失敗: {last}) — チャットバックエンド(8790)が起動しているか確認してください。",
             "sources": [], "error": str(last)}
 
+# ドメイン名（文京区障害者福祉 等）をプロンプト文言やHTMLに直書きしない。将来別ユースケースでも
+# .env の書き換えだけでコード変更なしに使い回せるよう、ペルソナ/画面タイトルは環境変数で外出しする
+# （未設定時は汎用ラベル）。KB_TITLE はチャット画面のタイトル・見出しに、KB_LABEL はLLMプロンプトの
+# ペルソナ文言に使う。
+KB_LABEL = os.environ.get("KB_LABEL", "この知識ベース")
+KB_TITLE = os.environ.get("KB_TITLE", "ナレッジベース Agentic Search")
+
+# ── 同一クラス複数候補の混同を防ぐ指示（ドメイン非依存）──
+# 「エンティティ」「クラス」「プロパティ」というオントロジー一般の語彙のみで書かれており、
+# ドメイン固有の名詞（等級・障害種別 等）を含まない。_pack_facts が根拠JSONに
+# same_class_groups を機械的に付与し、この指示はそのフィールドの読み方だけを説明する。
+_DISAMBIGUATION_RULE = (
+    "\n\n【重要】根拠のJSONに same_class_groups というフィールドがある場合、それは同じクラスに属する"
+    "複数の候補エンティティ群です。質問文が指定する条件（プロパティの値）に一致するエンティティのみを"
+    "採用し、条件が一致しない他の候補の情報を回答に混在させないでください。『念のため』として"
+    "複数候補を併記せず、最も条件に一致する1件だけを答えてください。条件に一致するものを"
+    "特定できない場合は、その旨を明示してください。"
+)
+
 _ANSWER_SYS_KG = (
-    "あなたは文京区の障害者福祉の案内担当。与えられた【ナレッジグラフの根拠】だけを使って日本語で簡潔に答える。"
-    "根拠に無い金額・等級・電話番号・固有名を創作しない。根拠から答えられない場合は"
-    "『ナレッジグラフからは分かりません』とだけ述べる。")
+    f"あなたは、{KB_LABEL}の案内アシスタントです。与えられた【ナレッジグラフの根拠】だけを使って"
+    "日本語で簡潔に答えてください。根拠に無い情報を創作しないでください。根拠から答えられない場合は"
+    "『ナレッジグラフからは分かりません』とだけ述べてください。" + _DISAMBIGUATION_RULE)
 _ANSWER_SYS_KGWIKI = (
-    "あなたは文京区の障害者福祉の案内担当。【ナレッジグラフの根拠】と【LLM-Wiki本文】を使って日本語で簡潔に答える。"
-    "両方に無い情報は創作しない。答えられない場合は『分かりません』と述べる。")
+    f"あなたは、{KB_LABEL}の案内アシスタントです。【ナレッジグラフの根拠】と【本文】を使って"
+    "日本語で簡潔に答えてください。両方に無い情報は創作しないでください。答えられない場合は"
+    "『分かりません』と述べてください。" + _DISAMBIGUATION_RULE)
+
+# ── 4手法目: LLM-Wiki検索 + Agentic Search（KGを一切使わず、Wikiページ間の
+# [表示名](slug.md) リンクだけをたどって根拠を集める）──
+# LLM-Wikiはページ間の相互リンクを持つため、リンク構造だけでAgentic Searchが成立するか
+# （＝KGを介さなくても「たどる」検索ができるか）を、ナイーブRAG/KG手法と並べて比較する。
+_WIKI_LINK_RE = re.compile(r'\[([^\]]+)\]\(([A-Za-z0-9_-]+)\.md\)')
+
+def _extract_wiki_links(content):
+    """本文中の [表示名](slug.md) 形式のリンクを (表示名, slug) のリストで返す。"""
+    return [(m.group(1), m.group(2)) for m in _WIKI_LINK_RE.finditer(content or "")]
+
+_WIKI_AGENTIC_PLANNER_SYS = (
+    "あなたはWikiページのリンクをたどって情報を探すエージェントです。質問と、現在読んでいるWikiページ本文、"
+    "および現在のページからたどれるリンク候補（表示名の一覧）が与えられます。"
+    "質問に答えるための情報が現在のページ群だけで十分なら done:true とし、follow は空配列にしてください。"
+    "不十分で、リンク候補の中に関連しそうなものがあれば、その表示名を関連度が高い順に最大2件 follow に入れてください"
+    "（無関係な候補しか無ければ follow は空配列にし、done:true としてください）。"
+    '出力JSON: {"done": true/false, "follow": ["リンク表示名", ...], "reason": "簡潔な理由"}'
+)
+
+_WIKI_AGENTIC_ANSWER_SYS = (
+    f"あなたは、{KB_LABEL}の案内アシスタントです。以下のLLM-Wikiページ本文だけを使って、"
+    "日本語で簡潔に答えてください。本文にない情報は創作しないでください。答えられない場合は"
+    "『分かりません』と述べてください。"
+)
+
+def _wiki_agentic_search(question, max_hops=3, max_pages=6):
+    """LLM-Wikiのmdリンク構造だけをたどるAgentic Search（KG不使用）。
+    ① 埋め込みで起点ページを選ぶ → ② 現在のページ群からたどれるリンク候補をLLMに提示し、
+    関連しそうなものを選んでもらう → ③ 十分になるかmax_hopsに達するまで②を繰り返す →
+    ④ 集めたページ本文だけから回答する。
+    戻り値: {"answer":..., "trace":[...], "pages_visited":[...]}"""
+    trace = []
+    wiki_dir = os.path.join(HERE, "..", "step1_data", "wiki")
+    all_slugs = sorted(os.path.basename(f)[:-3] for f in glob.glob(os.path.join(wiki_dir, "*.md")) if os.path.basename(f) != "index.md")
+
+    # ① 埋め込みで起点ページを選ぶ（Wikiページ選定と同じ仕組みを流用）
+    all_pairs = [(s, (_read_wiki(s) or "")[:4000]) for s in all_slugs]
+    store = _ensure_wiki_embeddings(all_pairs)
+    try:
+        qvec = _embed_query(question)
+        scored = sorted(((_cosine(qvec, store[s]["vec"]), s) for s, _ in all_pairs if s in store), key=lambda x: -x[0])
+    except Exception as ex:
+        scored = []
+        trace.append({"node": "WikiSeed(埋め込み)", "txt": f"起点検索に失敗: {ex}"})
+    if not scored:
+        return {"answer": "分かりません（起点ページの検索に失敗しました）", "trace": trace or [{"node": "WikiSeed", "txt": "候補なし"}], "pages_visited": []}
+    seed_slug = scored[0][1]
+    trace.append({"node": "WikiSeed(埋め込み)", "txt": f"起点ページ: {seed_slug}（類似度{scored[0][0]:.2f}）"})
+
+    visited = {}
+    def _load(slug):
+        c = _read_wiki(slug)
+        if c is not None:
+            visited[slug] = c[:3000]
+    _load(seed_slug)
+
+    for hop in range(max_hops):
+        if len(visited) >= max_pages:
+            trace.append({"node": "Critic(LLM)", "txt": f"上限{max_pages}ページに到達 → 終了"})
+            break
+        # 現在読んでいるページ群からリンク候補を集める（訪問済み・自己参照は除く）
+        candidates = {}
+        for slug, content in visited.items():
+            for text, target in _extract_wiki_links(content):
+                if target not in visited and target != slug and target in all_slugs:
+                    candidates.setdefault(text, target)
+        if not candidates:
+            trace.append({"node": "Critic(LLM)", "txt": "たどれるリンクなし → 終了"})
+            break
+        ctx = "\n\n".join(f"## {s}\n{c}" for s, c in visited.items())[:9000]
+        cand_list = "\n".join(f"- {t}" for t in list(candidates.keys())[:40])
+        try:
+            plan = _llm_json(_WIKI_AGENTIC_PLANNER_SYS,
+                              f"質問: {question}\n\n【現在読んでいるページ】\n{ctx}\n\n【たどれるリンク候補】\n{cand_list}")
+        except Exception as ex:
+            plan = {"done": True, "follow": [], "reason": f"判定失敗: {ex}"}
+        if plan.get("done") or not plan.get("follow"):
+            trace.append({"node": "Critic(LLM)", "txt": ("根拠十分 ✓" if plan.get("done") else "関連リンクなし → 終了") + (f"（{plan.get('reason')}）" if plan.get("reason") else "")})
+            break
+        followed = []
+        for t in (plan.get("follow") or [])[:2]:
+            target = candidates.get(t)
+            if not target:
+                for k, v in candidates.items():   # 表示名の完全一致が無ければ部分一致でフォールバック
+                    if t in k or k in t:
+                        target = v; break
+            if target and target not in visited:
+                _load(target)
+                followed.append(f"{t}→{target}")
+        trace.append({"node": "Rewrite→Retrieval", "txt": f"リンクをたどる: {', '.join(followed) if followed else '(該当リンクなし)'}"})
+        if not followed:
+            break
+
+    trace.append({"node": "Retrieval", "txt": f"{len(visited)}ページを読了: {', '.join(visited.keys())}"})
+    ctx = "\n\n".join(f"## {s}\n{c}" for s, c in visited.items())[:12000]
+    try:
+        answer = _llm_text(_WIKI_AGENTIC_ANSWER_SYS, f"質問: {question}\n\n【LLM-Wikiページ本文】\n{ctx}")
+    except Exception as ex:
+        answer = f"(生成失敗: {ex})"
+    trace.append({"node": "Answer(LLM)", "txt": f"{len(visited)}ページの本文から生成"})
+    return {"answer": answer, "trace": trace, "pages_visited": list(visited.keys())}
+
 _JUDGE_SYS = (
-    "あなたは回答採点者かつ原因解析者。質問と『正解』を基準に、3つの回答（N=ナイーブRAG / A=KGのみ / B=KG+Wiki）を採点する。"
+    "あなたは回答採点者かつ原因解析者。質問と『正解』を基準に、4つの回答"
+    "（N=ナイーブRAG / W=LLM-Wiki検索(Agentic) / A=KGのみ / B=KG+Wiki）を採点する。"
     "各 verdict は correct / partial / incorrect のいずれか: "
     "correct=正解の要点を過不足なく含む, partial=一部一致だが不足や軽微な誤り, incorrect=誤りor未回答。理由(reason)は簡潔に。"
-    "さらに A(KGのみ) と B(KG+Wiki) が correct でない場合は、提供される【原因解析の材料】（取得サブグラフ・読込Wiki・source）を根拠に、"
-    "根本原因を cause に記す。cause は必ず次の型ラベルを先頭に付ける（1つ選ぶ）＋一言:\n"
-    "[検索不足]=正解に必要なエンティティをKGから取得できていない（取得ノードに該当が無い）\n"
-    "[KG構造欠落]=エンティティは取得したが、答えに必要な属性/関係がKG側に無い\n"
-    "[Wiki未読込]=参照すべきWikiページが読み込まれていない（sourceが無い/無効/0ページ）\n"
-    "[Wiki網羅不足]=Wikiは読み込めたが、その本文に正解の該当記載が無い\n"
-    "[回答生成]=根拠は揃っているのに回答が正解と食い違う（LLMの生成側の問題）\n"
+    "さらに W・A・B が correct でない場合は、提供される【原因解析の材料】（Wiki探索経路・取得サブグラフ・読込Wiki・source）を"
+    "根拠に、根本原因を cause に記す。cause は必ず次の型ラベルを先頭に付ける（1つ選ぶ）＋一言:\n"
+    "[検索不足]=正解に必要なエンティティがプロンプトに投入されていない（投入ノードに該当が無い。A・B専用）\n"
+    "[KG構造欠落]=エンティティは投入されたが、答えに必要な属性/関係がKG側に無い（A・B専用）\n"
+    "[Wiki未読込]=参照すべきWikiページがプロンプトに投入されていない（sourceが無い/本文が無い/0ページ。A・B専用）\n"
+    "[Wiki網羅不足]=関連するWikiページは投入・到達できたが、その本文に正解の該当記載が無い（W・B共通）\n"
+    "[起点誤り]=Wiki検索(W)の起点ページ自体が質問と無関係だった（W専用）\n"
+    "[リンク未到達]=起点ページは合っていたが、正解が載っているページまでリンクをたどり着けなかった（W専用）\n"
+    "[回答生成]=必要な根拠が投入・到達できているのに回答が正解と食い違う（LLMの生成側の問題）。"
+    "投入・到達できていない根拠を理由にこのラベルを選んではいけない。"
+    "『同一クラスの複数候補』の中から条件に合わない候補を混ぜてしまっている場合もこのラベルとする\n"
     "correct の場合や N の cause は空文字でよい。"
     '出力JSON: {"naive":{"verdict":"...","reason":"..."},'
+    '"wikiagent":{"verdict":"...","reason":"...","cause":"..."},'
     '"kg":{"verdict":"...","reason":"...","cause":"..."},"kgwiki":{"verdict":"...","reason":"...","cause":"..."}}')
 
 def _answer_query(question, cq_docs=None):
@@ -1909,25 +2657,44 @@ def _answer_query(question, cq_docs=None):
     entities, keywords, hops = _plan_query(question, labels, rel_types)
     trace.append({"node": "Planner(LLM)", "txt": f'entities={entities[:8]} / keywords={keywords[:8]} / hops={hops}'})
 
-    seeds = _seed_nodes(kg["nodes"], entities, keywords)
+    terms = _query_terms(entities, keywords, nodes=kg["nodes"])
+    seeds, score_by_id = _seed_nodes(kg["nodes"], entities, keywords, question=question)
     ids = _expand(seeds, adj, hops)
     fnodes, fedges = _subgraph_facts(ids, by_id, kg["edges"])
+    retrieved_nodes = len(fnodes)
     trace.append({"node": "Retrieval", "txt": f'シード{len(seeds)} → 近傍展開{len(fnodes)}ノード / {len(fedges)}エッジ'})
 
     if len(fnodes) < 2 and seeds:
         ids = _expand(seeds, adj, hops + 1)
         fnodes, fedges = _subgraph_facts(ids, by_id, kg["edges"])
+        retrieved_nodes = len(fnodes)
         trace.append({"node": "Critic(LLM)", "txt": f'根拠不足 → hop拡大で{len(fnodes)}ノード'})
     else:
         trace.append({"node": "Critic(LLM)", "txt": "根拠十分 ✓"})
 
-    facts_json = json.dumps({"nodes": fnodes, "edges": fedges}, ensure_ascii=False)[:8000]
-    sources = {s for n in fnodes for s in _slugs_from((n.get("props") or {}).get("source"))}
+    # 関連度で上位のみに絞る（文字数での打ち切りに任せない）
+    fnodes = _select_nodes(fnodes, terms, seeds, score_by_id)
+    kept_ids = {n["id"] for n in fnodes}
+    fedges = [e for e in fedges if e["from"] in kept_ids and e["to"] in kept_ids]
+    facts_json, fnodes, fedges = _pack_facts(fnodes, fedges)
+    trace.append({"node": "Rank", "txt": f'関連度上位{len(fnodes)}ノード / {len(fedges)}エッジをプロンプトに投入（取得{retrieved_nodes}件から選抜）'})
+
+    # Wikiの候補は「プロンプトに載せたノードのsource」。ノードのスコアをスラッグへ引き継ぐ
+    slug_score, sources = {}, set()
+    for n in fnodes:
+        ns = score_by_id.get(n["id"], 0.0)
+        for s in _slugs_from((n.get("props") or {}).get("source")):
+            sources.add(s)
+            slug_score[s] = max(slug_score.get(s, 0.0), ns)
     wiki_slugs = sorted(sources | set(cq_docs or []))
 
     # 回答N: ナイーブRAG（KG非依存・PDFチャンクのベクトル検索→LLM）
     naive = _naive_rag(question)
     trace.append({"node": "NaiveRAG", "txt": f'PDFベクトル検索→回答（出典{len(naive.get("sources") or [])}チャンク）'})
+
+    # 回答W: LLM-Wiki検索 + Agentic Search（KG不使用。Wikiページ間のmdリンクだけをたどる）
+    wa = _wiki_agentic_search(question)
+    trace.append({"node": "WikiAgentic", "txt": f'{len(wa.get("pages_visited") or [])}ページを探索: {", ".join(wa.get("pages_visited") or [])}'})
 
     # 回答A: KGのみ
     try:
@@ -1935,75 +2702,114 @@ def _answer_query(question, cq_docs=None):
     except Exception as ex:
         ans_kg = f"(生成失敗: {ex})"
 
-    # 回答B: KG + Wiki補完
-    wiki = _load_wiki_pages(wiki_slugs)
-    wiki_loaded = list(wiki.keys())            # 実際に本文を読み込めたページ
-    wiki_ctx = "\n\n".join(f"## {k}\n{v}" for k, v in wiki.items())[:9000]
+    # 回答B: KG + Wiki補完（関連度上位ページのみ。アルファベット順の打ち切りをしない）
+    wiki, wiki_loaded_n = _select_wiki(wiki_slugs, terms, slug_score, question)
+    wiki_delivered = list(wiki.keys())          # 実際にプロンプトへ載ったページ
+    wiki_ctx = "\n\n".join(f"## {k}\n{v}" for k, v in wiki.items())
     try:
         ans_kgwiki = _llm_text(_ANSWER_SYS_KGWIKI,
                                f"質問: {question}\n\n【ナレッジグラフの根拠】\n{facts_json}\n\n【LLM-Wiki本文】\n{wiki_ctx}")
     except Exception as ex:
         ans_kgwiki = f"(生成失敗: {ex})"
-    trace.append({"node": "Answer(LLM)", "txt": f'ナイーブRAG / KGのみ / KG+Wiki(参照{len(wiki)}ページ) を生成'})
+    trace.append({"node": "Answer(LLM)", "txt": f'ナイーブRAG / KGのみ / KG+Wiki(投入{len(wiki)}ページ / 読込可{wiki_loaded_n}件) を生成'})
 
-    node_ids = [i for i in ids if i in by_id]
+    node_ids = [n["id"] for n in fnodes]
     return {
         "question": question,
         "naive": {"answer": naive.get("answer", ""), "rag_sources": naive.get("sources") or []},
+        "wikiagent": {"answer": wa.get("answer", ""), "pages_visited": wa.get("pages_visited") or [], "trace": wa.get("trace") or []},
         "kg": {"answer": ans_kg},
         "kgwiki": {"answer": ans_kgwiki},
         "subgraph": {"node_ids": node_ids, "edges": fedges},
-        "entities": [_node_name(by_id[i]) for i in node_ids][:30],
+        "entities": [_node_name(by_id[i]) for i in node_ids if i in by_id][:30],
         "sources": wiki_slugs, "trace": trace,
         # ── 原因解析用の材料（LLMなしで算出。Judgeにも渡す）──
+        # kg_brief / wiki_delivered は「実際にプロンプトへ載った内容」。Judgeの誤判定を防ぐため
+        # 読込数ではなく投入数を材料にする。
         "kg_brief": _kg_brief(fnodes, fedges),
-        "wiki_loaded": wiki_loaded,
-        "diag": {"retrieved_nodes": len(node_ids), "wiki_requested": len(wiki_slugs),
-                 "wiki_loaded": len(wiki_loaded), "kg_dontknow": ("分かりません" in ans_kg)},
+        "wiki_loaded": wiki_delivered,
+        "wiki_delivered": wiki_delivered,
+        "diag": {"retrieved_nodes": retrieved_nodes, "wiki_requested": len(wiki_slugs),
+                 "wiki_loaded": wiki_loaded_n,
+                 "nodes_delivered": len(fnodes), "wiki_delivered": len(wiki_delivered),
+                 "wikiagent_pages": len(wa.get("pages_visited") or []),
+                 "kg_dontknow": ("分かりません" in ans_kg)},
     }
 
 def _kg_brief(fnodes, fedges):
-    """Judge/原因解析用に、取得サブグラフをコンパクトなテキストへ（ノード名[型]: プロパティ名一覧 ＋ エッジ）。"""
+    """Judge/原因解析用に、実際にプロンプトへ投入したサブグラフをコンパクトなテキスト化。
+    以前は fnodes[:40] と固定スライスしていたため、Judgeは投入内容の一部しか見ずに
+    [検索不足] と誤判定していた。ここでは投入ノード全件（_select_nodes で上限済）を、
+    属性名だけでなく短い値付きで渡す（[KG構造欠落]との切り分けに必要）。"""
     lines = []
-    for n in fnodes[:40]:
+    for n in fnodes:
         p = n.get("props") or {}
         nm = p.get("name") or n.get("id")
         typ = (n.get("labels") or ["?"])[-1]
-        pk = [k for k in p.keys() if k not in ("name", "type_label")]
-        lines.append(f"- {nm}[{typ}]: {', '.join(pk) if pk else '(属性なし)'}")
-    elines = [f"- {e.get('from')} -{e.get('type')}-> {e.get('to')}" for e in fedges[:30]]
-    return "【取得ノード】\n" + "\n".join(lines) + "\n【取得エッジ】\n" + ("\n".join(elines) or "(なし)")
+        kv = [f"{k}={str(v)[:40]}" for k, v in p.items() if k not in ("name", "type_label")]
+        lines.append(f"- {nm}[{typ}]: {', '.join(kv) if kv else '(属性なし)'}")
+    elines = [f"- {e.get('from')} -{e.get('type')}-> {e.get('to')}" for e in fedges]
+
+    # 同一クラスの複数候補（_pack_facts の same_class_groups と同じ判定基準）。
+    # 回答LLMが混同していないか、Judgeが原因を切り分けるための材料。
+    groups = {}
+    for n in fnodes:
+        lbl = tuple(n.get("labels") or [])
+        if lbl:
+            p = n.get("props") or {}
+            groups.setdefault(lbl, []).append(p.get("name") or n.get("id"))
+    glines = [f"- {list(lbl)}: {', '.join(names)}" for lbl, names in groups.items() if len(names) >= 2]
+
+    return ("【プロンプトに投入したノード】\n" + ("\n".join(lines) or "(なし)")
+            + "\n【プロンプトに投入したエッジ】\n" + ("\n".join(elines) or "(なし)")
+            + "\n【同一クラスの複数候補（回答が取り違えていないか要確認）】\n" + ("\n".join(glines) or "(なし)"))
 
 def _run_validation(cq):
     """3.2検証: _answer_query の3回答を正解(expected_answer)と照合して verdict を付与。
     KG+Wiki は「KGで辿ったEntityの source のみ」を参照する（QAのtrace元ページは混ぜない＝KG主導の到達性を厳密に測る）。"""
     expected = cq.get("expected_answer") or ""
-    r = _answer_query(cq.get("title") or "")
+    # title は生成時に question[:60] で切られており、24/30件が文の途中で途切れている。
+    # 採点は「完全な質問」に対する expected_answer で行うため、質問文には全文(description)を使う。
+    question = (cq.get("description") or "").strip() or (cq.get("title") or "")
+    r = _answer_query(question)
     diag = r.get("diag") or {}
     # Judge に採点＋原因解析を相乗り（LLM呼び出しは増やさない）。取得サブグラフと読込Wikiを材料として渡す。
-    diag_ctx = (f"\n\n【原因解析の材料】\n"
-                f"KGから取得したサブグラフ:\n{r.get('kg_brief','')[:3500]}\n"
-                f"実際に読み込めたWikiページ: {r.get('wiki_loaded') or '（なし）'}\n"
-                f"要求したsourceスラッグ: {r.get('sources') or '（なし）'}\n"
+    _d = r.get("diag") or {}
+    wa = r.get("wikiagent") or {}
+    wa_trace = wa.get("trace") or []
+    wa_path = " → ".join(t.get("txt", "") for t in wa_trace if t.get("node") in ("WikiSeed(埋め込み)", "Rewrite→Retrieval"))
+    diag_ctx = (f"\n\n【原因解析の材料】※以下は回答LLMが実際に受け取った内容そのもの\n"
+                f"プロンプトに投入したサブグラフ:\n{r.get('kg_brief','')[:3500]}\n"
+                f"プロンプトに投入したWikiページ({_d.get('wiki_delivered')}件): {r.get('wiki_delivered') or '（なし）'}\n"
+                f"（参考）KG検索でヒットした総ノード数: {_d.get('retrieved_nodes')} / "
+                f"source候補スラッグ: {_d.get('wiki_requested')}件 / うち本文が存在: {_d.get('wiki_loaded')}件\n"
+                f"Wiki検索(W)が探索したページ({len(wa.get('pages_visited') or [])}件): {wa.get('pages_visited') or '（なし）'}\n"
+                f"Wiki検索(W)の探索経路: {wa_path or '（記録なし）'}\n"
+                f"注意: 上記『投入した』『探索した』もの以外は回答LLMには渡っていない。"
+                f"候補にあっても投入・到達されていないページ/ノードを『読み込めているのに反映できていない』と判定しないこと。\n"
                 f"（ナイーブRAG回答は上記。PDFに情報があるかの手掛かりに使う）")
     try:
         j = _llm_json(_JUDGE_SYS,
                       f"質問: {r['question']}\n正解: {expected}\n\n"
                       f"回答N(ナイーブRAG): {r['naive'].get('answer','')}\n\n"
+                      f"回答W(LLM-Wiki検索): {wa.get('answer','')}\n\n"
                       f"回答A(KGのみ): {r['kg'].get('answer','')}\n\n回答B(KG+Wiki): {r['kgwiki'].get('answer','')}"
                       + diag_ctx)
     except Exception as ex:
-        j = {"naive": {"verdict": "error", "reason": str(ex)},
+        j = {"naive": {"verdict": "error", "reason": str(ex)}, "wikiagent": {"verdict": "error", "reason": str(ex)},
              "kg": {"verdict": "error", "reason": str(ex)}, "kgwiki": {"verdict": "error", "reason": str(ex)}}
     r["trace"].append({"node": "Judge(LLM)", "txt": f'Naive={((j.get("naive") or {}).get("verdict"))} / '
+                       f'Wiki検索={((j.get("wikiagent") or {}).get("verdict"))} / '
                        f'KG={((j.get("kg") or {}).get("verdict"))} / KG+Wiki={((j.get("kgwiki") or {}).get("verdict"))}'})
     return {
         "cq_id": cq.get("id"), "question": r["question"], "expected": expected, "type": cq.get("type"),
         "naive": {**r["naive"], **(j.get("naive") or {})},
+        "wikiagent": {**wa, **(j.get("wikiagent") or {})},
         "kg": {**r["kg"], **(j.get("kg") or {})},
         "kgwiki": {**r["kgwiki"], **(j.get("kgwiki") or {})},
         "entities": r["entities"], "sources": r["sources"], "trace": r["trace"],
         "diag": diag, "wiki_loaded": r.get("wiki_loaded") or [],
+        "wiki_delivered": r.get("wiki_delivered") or [],
         "run_at": datetime.datetime.now().isoformat(timespec="seconds"),
     }
 
@@ -2012,7 +2818,9 @@ def _approved_cqs():
 
 @app.get("/api/validation/cqs")
 def validation_cqs():
-    return JSONResponse([{"id": c.get("id"), "title": c.get("title"),
+    # title は question[:60] で切られている既存データがあるため、全文(description)を優先して表示する
+    return JSONResponse([{"id": c.get("id"),
+                          "title": (c.get("description") or "").strip() or c.get("title"),
                           "expected_answer": c.get("expected_answer"), "type": c.get("type")}
                          for c in _approved_cqs()])
 
@@ -2038,7 +2846,7 @@ class AskBody(BaseModel):
 
 @app.post("/api/validation/ask")
 def validation_ask(body: AskBody):
-    """チャット用: 任意の質問に3手法(ナイーブRAG/KGのみ/KG+Wiki)でライブ回答。正解なし・judgeなし。"""
+    """チャット用: 任意の質問に4手法(ナイーブRAG/LLM-Wiki検索(Agentic)/KGのみ/KG+Wiki)でライブ回答。正解なし・judgeなし。"""
     q = (body.query or "").strip()
     if not q:
         return JSONResponse({"ok": False, "error": "empty query"}, status_code=400)
@@ -2068,7 +2876,7 @@ HTML = r"""<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>文京区障害者福祉 KG — レビューUI</title>
+<title id="page-title">KG レビューUI</title>
 <style>
   :root{--bg:#f5f7fa;--card:#fff;--border:#e2e6ea;--text:#1b1f24;--muted:#6b7280;--accent:#2563eb;--accent-light:#eff6ff;--warn:#d97706;--warn-bg:#fffbeb;--ok:#16a34a;--ok-bg:#f0fdf4;--reject:#dc2626;--reject-bg:#fef2f2;--purple:#7c3aed;--purple-bg:#f5f3ff}
   *{box-sizing:border-box;margin:0;padding:0}
@@ -2114,7 +2922,7 @@ HTML = r"""<!DOCTYPE html>
 <body>
 <div class="topbar">
   <button onclick="if(history.length>1){history.back()}else{location.assign('/')}" style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--accent);font-weight:600;cursor:pointer;font-size:.85rem">← 戻る</button>
-  <h1>📋 文京区障害者福祉 KG</h1>
+  <h1 id="page-h1">📋 KG レビューUI</h1>
 </div>
 <div class="content">
 
@@ -2201,9 +3009,9 @@ HTML = r"""<!DOCTYPE html>
   <div class="card" style="margin-top:12px">
     <div class="card-title" style="margin-bottom:8px">✏️ 新規QA（質問＋回答ペア）追加</div>
     <div style="display:flex;flex-direction:column;gap:6px">
-      <input type="text" id="new-cq-title" placeholder="質問（例: 身体2級が受けられる手当と月額は？）" style="padding:6px 10px;border:1px solid var(--border);border-radius:5px;font-size:.85rem">
+      <input type="text" id="new-cq-title" placeholder="質問（例: ○○の対象条件と金額は？）" style="padding:6px 10px;border:1px solid var(--border);border-radius:5px;font-size:.85rem">
       <textarea id="new-cq-desc" placeholder="質問の詳細説明" rows="2" style="padding:6px 10px;border:1px solid var(--border);border-radius:5px;font-size:.85rem;resize:vertical"></textarea>
-      <textarea id="new-cq-answer" placeholder="期待される回答（例: 心身障害者等福祉手当（区）15,500円/月、特別障害者手当（国）28,840円/月…）" rows="2" style="padding:6px 10px;border:1px solid var(--border);border-radius:5px;font-size:.85rem;resize:vertical;background:var(--ok-bg);border-color:var(--ok)"></textarea>
+      <textarea id="new-cq-answer" placeholder="期待される回答（例: ○○制度は月額15,500円、△△制度は月額28,840円…）" rows="2" style="padding:6px 10px;border:1px solid var(--border);border-radius:5px;font-size:.85rem;resize:vertical;background:var(--ok-bg);border-color:var(--ok)"></textarea>
       <select id="new-cq-type" style="padding:6px 10px;border:1px solid var(--border);border-radius:5px;font-size:.85rem;background:var(--card)">
         <option value="lookup">単一参照 — 1つの情報を直接調べる</option>
         <option value="multi_hop">多段探索 — 複数の関係をたどって調べる</option>
@@ -2263,8 +3071,10 @@ HTML = r"""<!DOCTYPE html>
     <button onclick="renderKG('neo4j')" id="kg-view-neo4j-btn" style="padding:7px 14px;border:1px solid var(--accent);border-radius:6px;background:var(--card);color:var(--accent);font-weight:600;cursor:pointer;font-size:.82rem">🗄 Neo4j（投入後）</button>
     <button onclick="renderKG('extracted')" id="kg-view-extracted-btn" style="padding:7px 14px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--muted);font-weight:600;cursor:pointer;font-size:.82rem">📄 最新の抽出</button>
     <a href="#" id="kg-cypher-link" target="_blank" style="display:none;padding:7px 14px;border:1px solid var(--accent);border-radius:6px;color:var(--accent);text-decoration:none;font-size:.82rem;font-weight:600">📄 Cypherを表示</a>
+    <button onclick="extractMissingKG()" id="kg-extract-missing-btn" style="display:none;padding:7px 14px;border:1px solid var(--warn);border-radius:6px;background:var(--warn-bg);color:var(--warn);font-weight:600;cursor:pointer;font-size:.82rem">🔍 未カバー分のみ再抽出</button>
     <button onclick="extractKG()" id="kg-extract-btn" style="padding:7px 16px;border:none;border-radius:6px;background:var(--accent);color:#fff;font-weight:600;cursor:pointer;font-size:.82rem">🤖 LLM-Wikiから抽出 → Neo4j</button>
   </div>
+  <div id="kg-coverage" style="display:none;font-size:.76rem;margin-bottom:8px;padding:6px 10px;border-radius:6px;border:1px solid var(--warn);background:var(--warn-bg);color:var(--warn)"></div>
   <div id="kg-status" style="display:none;font-size:.8rem;margin-bottom:8px;padding:8px 12px;border-radius:6px;border:1px solid var(--border);background:var(--card)"></div>
   <div id="kg-legend" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px;font-size:.72rem"></div>
   <div id="kg-empty" class="empty-state" style="padding:40px;text-align:center;color:var(--muted)">
@@ -3163,6 +3973,32 @@ async function extractKG() {
   btn.disabled = false; btn.textContent = old;
 }
 
+async function extractMissingKG() {
+  const btn = document.getElementById('kg-extract-missing-btn');
+  const st = document.getElementById('kg-status');
+  const old = btn.textContent;
+  btn.disabled = true; btn.textContent = '⏳ 未カバー分を再抽出中…';
+  st.style.display = 'block';
+  st.innerHTML = '<div class="prog-bar"><div class="prog-fill" id="kg-prog-fill" style="width:0%"></div></div><div class="prog-label" id="kg-prog-label">準備中…</div>';
+  try {
+    const r = await fetch(API + '/api/kg/extract-missing', {method:'POST'});
+    const d = await r.json();
+    if (!d.ok) { st.innerHTML = '⚠ ' + (d.error || '失敗'); btn.disabled=false; btn.textContent=old; return; }
+    const tid = d.task_id;
+    while (true) {
+      await new Promise(r => setTimeout(r, 2000));
+      const pr = await (await fetch(API + '/api/task/' + tid)).json();
+      const pct = Math.round(pr.progress / pr.total * 100);
+      document.getElementById('kg-prog-fill').style.width = pct + '%';
+      document.getElementById('kg-prog-label').textContent = pr.msg || (pct + '%');
+      if (pr.status === 'done') { st.innerHTML = '<div class="prog-bar"><div class="prog-fill done" style="width:100%"></div></div><div class="prog-label" style="color:var(--ok)">✅ ' + (pr.msg||'完了') + '</div>'; break; }
+      if (pr.status === 'error') { st.innerHTML = '<div class="prog-bar"><div class="prog-fill error" style="width:100%"></div></div><div class="prog-label" style="color:var(--reject)">⚠ エラー: ' + (pr.error || '') + '</div>'; break; }
+    }
+    await renderKG('extracted');
+  } catch(e) { st.innerHTML = '<div class="prog-label" style="color:var(--reject)">⚠ 通信エラー: ' + e.message + '</div>'; }
+  btn.disabled = false; btn.textContent = old;
+}
+
 // ビューの選択状態を反映（どちらのソースを表示中か）
 function setKgViewActive(source) {
   const nb = document.getElementById('kg-view-neo4j-btn');
@@ -3203,6 +4039,28 @@ async function renderKG(source) {
     } else { used = 'neo4j'; }
   }
   setKgViewActive(used);
+
+  // 未カバーページ表示（表示中がNeo4jビューでも、直近の抽出メタから判定する）
+  try {
+    const extMeta = (await fetchKG('/api/kg/extracted')).meta || {};
+    const uncovered = extMeta.uncovered_pages || [];
+    const berrs = extMeta.batch_errors || [];
+    const covDiv = document.getElementById('kg-coverage');
+    const missBtn = document.getElementById('kg-extract-missing-btn');
+    if (uncovered.length || berrs.length) {
+      covDiv.style.display = 'block';
+      covDiv.innerHTML = uncovered.length
+        ? `⚠ 未カバーページ: <b>${uncovered.length}件</b>（KGに1件もノードが無いWikiページ） `
+          + `<span style="color:var(--muted);font-size:.7rem">${uncovered.slice(0,6).map(escHtml).join(', ')}${uncovered.length>6?' …':''}</span>`
+        : '';
+      if (berrs.length) covDiv.innerHTML += (uncovered.length?'<br>':'') + `⚠ 抽出失敗バッチ: <b>${berrs.length}件</b>（自動でJSON修復リトライ済みでも失敗）`;
+      missBtn.style.display = uncovered.length ? 'inline-block' : 'none';
+      missBtn.textContent = `🔍 未カバー分のみ再抽出（${uncovered.length}件）`;
+    } else {
+      covDiv.style.display = 'none';
+      missBtn.style.display = 'none';
+    }
+  } catch(e) {}
 
   if (kg.error || !kg.nodes || !kg.nodes.length) {
     empty.style.display = 'block'; container.style.display = 'none';
@@ -3338,6 +4196,23 @@ async function renderKG(source) {
 
 // ── 3.2 検証（ナレッジグラフでQAに答えられるか） ──
 function escHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+// LLM回答はMarkdown（**強調**・箇条書き・見出し等）で返ってくるため、生テキストのまま表示すると
+// 記号がそのまま見えてしまう。簡易Markdown→HTML変換で読みやすく表示する。
+function mdToHtml(md){
+  const lines=(md||'').split('\n'); let html='',inList=false;
+  const inline = s => escHtml(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>');
+  for(const raw of lines){
+    const line=raw.replace(/\s+$/,'');
+    if(/^\s*[-*]\s+/.test(line)){ if(!inList){html+='<ul style="margin:2px 0 2px 18px;padding:0">';inList=true;} html+='<li>'+inline(line.replace(/^\s*[-*]\s+/,''))+'</li>'; continue; }
+    if(inList){html+='</ul>';inList=false;}
+    if(/^#{1,6}\s+/.test(line)){ html+='<div style="font-weight:700;margin-top:4px">'+inline(line.replace(/^#{1,6}\s+/,''))+'</div>'; continue; }
+    if(/^---+$/.test(line)){ html+='<hr style="border:0;border-top:1px solid var(--border);margin:6px 0">'; continue; }
+    if(line.trim()===''){ html+='<div style="height:4px"></div>'; continue; }
+    html+='<div>'+inline(line)+'</div>';
+  }
+  if(inList)html+='</ul>';
+  return html || '<span style="color:var(--muted)">（回答なし）</span>';
+}
 function verdictBadge(v){
   const m={correct:['✓ 正解','#166534','#dcfce7'],partial:['△ 部分','#854d0e','#fef9c3'],
            incorrect:['✗ 不正解','#991b1b','#fee2e2'],error:['⚠ エラー','#6b7280','#f3f4f6']};
@@ -3381,7 +4256,7 @@ function renderValSummary(results){
   };
   document.getElementById('val-summary').innerHTML =
     `<div style="display:flex;gap:24px;flex-wrap:wrap;padding:12px 14px;border:1px solid var(--border);border-radius:8px;background:var(--card);margin-bottom:12px">
-      ${bar('🔍 ナイーブRAG', tally('naive'))}${bar('🗄 KGのみ', tally('kg'))}${bar('🗄+📄 KG+Wiki補完', tally('kgwiki'))}</div>`;
+      ${bar('🔍 ナイーブRAG', tally('naive'))}${bar('📖 LLM-Wiki検索(Agentic)', tally('wikiagent'))}${bar('🗄 KGのみ', tally('kg'))}${bar('🗄+📄 KG+Wiki補完', tally('kgwiki'))}</div>`;
 }
 const VAL_TYPE={lookup:'📖 単一参照',multi_hop:'🔗 多段探索',aggregation:'📋 一覧取得',constraint:'⚠️ 条件確認'};
 function valCard(cq, res){
@@ -3396,7 +4271,7 @@ function valCard(cq, res){
 function valResultHtml(res){
   const col=(label,d,extra)=>`<div style="flex:1;min-width:230px;border:1px solid var(--border);border-radius:8px;padding:9px 11px;background:var(--card)">
      <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px"><b style="font-size:.78rem">${label}</b> ${verdictBadge((d||{}).verdict)}</div>
-     <div style="font-size:.82rem;white-space:pre-wrap;margin-bottom:6px">${escHtml((d||{}).answer||'')}</div>
+     <div style="font-size:.82rem;margin-bottom:6px">${mdToHtml((d||{}).answer||'')}</div>
      <div style="font-size:.72rem;color:var(--muted)"><b>判定理由:</b> ${escHtml((d||{}).reason||'')}</div>
      ${(d&&d.cause)?`<div style="font-size:.72rem;color:#7c2d12;background:#fff7ed;border:1px solid #fed7aa;border-radius:5px;padding:3px 6px;margin-top:5px">🩺 <b>原因解析:</b> ${escHtml(d.cause)}</div>`:''}
      ${extra||''}
@@ -3406,14 +4281,22 @@ function valResultHtml(res){
   const naiveCol=res.naive
     ? col('🔍 ナイーブRAG',res.naive,naiveSrc)
     : `<div style="flex:1;min-width:230px;border:1px dashed var(--border);border-radius:8px;padding:9px 11px;background:var(--card);color:var(--muted);font-size:.78rem"><b>🔍 ナイーブRAG</b><br><span style="font-size:.74rem">旧結果のため未実行。「🔄 再検証」で追加されます。</span></div>`;
+  const wa = res.wikiagent;
+  const waPages = wa && wa.pages_visited && wa.pages_visited.length
+    ? `<div style="font-size:.7rem;color:var(--muted);margin-top:4px">探索: ${wa.pages_visited.map(s=>linkifyRefs(s)).join(' → ')}</div>` : '';
+  const wikiagentCol=wa
+    ? col('📖 LLM-Wiki検索(Agentic)',wa,waPages)
+    : `<div style="flex:1;min-width:230px;border:1px dashed var(--border);border-radius:8px;padding:9px 11px;background:var(--card);color:var(--muted);font-size:.78rem"><b>📖 LLM-Wiki検索(Agentic)</b><br><span style="font-size:.74rem">旧結果のため未実行。「🔄 再検証」で追加されます。</span></div>`;
   const ents=(res.entities||[]).map(escHtml).join('、');
   const srcs=(res.sources||[]).map(s=>linkifyRefs(s)).join(' ');
   const traceHtml=(res.trace||[]).map(t=>`<div>[${escHtml(t.node)}] ${escHtml(t.txt)}</div>`).join('');
-  return `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px">${naiveCol}${col('🗄 KGのみ',res.kg)}${col('🗄+📄 KG+Wiki補完',res.kgwiki)}</div>
-    ${res.diag?`<div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">📊 取得ノード <b>${res.diag.retrieved_nodes}</b> / 参照Wiki要求 <b>${res.diag.wiki_requested}</b>・読込成功 <b>${res.diag.wiki_loaded}</b>${res.diag.wiki_loaded===0&&res.diag.wiki_requested>0?' <span style="color:#b91c1c">← Wikiを1ページも読めていません</span>':''}${res.diag.retrieved_nodes===0?' <span style="color:#b91c1c">← KGから関連ノードを取得できていません</span>':''}</div>`:''}
+  return `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px">${naiveCol}${wikiagentCol}${col('🗄 KGのみ',res.kg)}${col('🗄+📄 KG+Wiki補完',res.kgwiki)}</div>
+    ${res.diag?`<div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">📊 KG検索ヒット <b>${res.diag.retrieved_nodes}</b> → <b style="color:var(--accent)">LLM投入ノード ${res.diag.nodes_delivered??'—'}</b> ／ source候補 <b>${res.diag.wiki_requested}</b>・本文あり <b>${res.diag.wiki_loaded}</b> → <b style="color:var(--accent)">LLM投入Wiki ${res.diag.wiki_delivered??'—'}ページ</b> ／ Wiki検索が探索 <b style="color:var(--accent)">${res.diag.wikiagent_pages??'—'}ページ</b>${res.diag.wiki_delivered===0&&res.diag.wiki_requested>0?' <span style="color:#b91c1c">← Wikiを1ページも投入できていません</span>':''}${res.diag.retrieved_nodes===0?' <span style="color:#b91c1c">← KGから関連ノードを取得できていません</span>':''}</div>`:''}
     <details style="font-size:.75rem"><summary style="cursor:pointer;color:var(--muted)">検索エンティティ / 参照Wiki / エージェント経路</summary>
       <div style="margin-top:5px"><b>検索エンティティ(${(res.entities||[]).length}):</b> ${ents||'—'}</div>
-      <div style="margin-top:3px"><b>参照Wiki(読込成功: ${(res.wiki_loaded||[]).length}):</b> ${srcs||'—'}</div>
+      <div style="margin-top:3px"><b>LLMに投入したWiki(${(res.wiki_delivered||[]).length}):</b> ${(res.wiki_delivered||[]).map(s=>linkifyRefs(s)).join(' ')||'—'}</div>
+      <div style="margin-top:3px;color:var(--muted)"><b>source候補(${(res.sources||[]).length}):</b> ${srcs||'—'}</div>
+      <div style="margin-top:3px"><b>Wiki検索(W)が探索したページ(${(wa&&wa.pages_visited||[]).length}):</b> ${(wa&&wa.pages_visited||[]).map(s=>linkifyRefs(s)).join(' ')||'—'}</div>
       <div style="margin-top:5px;font-family:monospace;font-size:.7rem;color:var(--muted)">${traceHtml}</div>
       <div style="margin-top:4px;color:var(--muted)">実行: ${escHtml(res.run_at||'')}</div>
     </details>
@@ -3480,6 +4363,13 @@ async function runAllValidation(){
 }
 
 initScreen();
+// 画面タイトル/見出しは .env の KB_TITLE から取得（別プロジェクトへforkしても.envの変更だけで済むように）
+fetch(API + '/api/meta').then(r=>r.json()).then(m=>{
+  if(m && m.kb_title){
+    document.getElementById('page-title').textContent = m.kb_title + ' — レビューUI';
+    document.getElementById('page-h1').textContent = '📋 ' + m.kb_title;
+  }
+}).catch(()=>{});
 </script>
 </body>
 </html>"""
