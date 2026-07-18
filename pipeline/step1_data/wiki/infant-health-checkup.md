@@ -1,16 +1,24 @@
 ---
-page: 17
+page: 138
 ---
 
-# 乳幼児健康診査
+# 乳幼児健診
 
-子どもの健康維持と発達を定期的に確認し、障害や発達上の課題を早期に発見するための健康診査です。
+子どもの成長や健康状態を確認するため、年齢に応じた乳幼児健康診査（健診）を実施しています。
 
-## 概要
-- 乳幼児期における身体発育や精神発達の節目に合わせて実施します。
-- 健診結果に基づき、必要に応じて専門的な相談や支援窓口を紹介します。
+## 健診スケジュール
 
-## 相談・実施窓口
-- [保健サービスセンター](hoken-service-center.md)
-- [保健サービスセンター本郷支所](hoken-service-center-hongo.md)
-- [新生児・乳児訪問](newborn-baby-visit.md)（関連事業）
+| 時期 | 実施場所 |
+| :--- | :--- |
+| **4か月** | [保健サービスセンター](hoken-service-center.md) 又は [保健サービスセンター 本郷支所](hongo-public-health-service-center.md) |
+| **6か月・9か月** | 指定医療機関 |
+| **1歳6か月** | [保健サービスセンター](hoken-service-center.md) 又は [保健サービスセンター 本郷支所](hongo-public-health-service-center.md) 及び 指定医療機関 |
+| **3歳** | [保健サービスセンター](hoken-service-center.md) 又は [保健サービスセンター 本郷支所](hongo-public-health-service-center.md) |
+
+*   **対象年齢**: 対象者個別通知
+
+## 問い合わせ先
+*   [保健サービスセンター](hoken-service-center.md)
+    *   電話番号: 03-5803-1805
+*   [保健サービスセンター 本郷支所](hongo-public-health-service-center.md)
+    *   電話番号: 03-3821-5106

@@ -436,8 +436,14 @@ def _do_generate_llmwiki(tid):
 
             # Karpathy方式: LLMに全テキストを渡し、エンティティ・概念・相互リンクを一括生成させる
             _task_update(tid, 15, "LLMがエンティティ一覧を生成中…（章ごと）")
-            # Step 1: 章ごとにエンティティ/概念を抽出して統合（全章が寄与・名前で重複排除）
-            entities, _seen = [], set()
+            # Step 1: 章ごとにエンティティ/概念を抽出して統合。
+            # 【重複対策】同じ実体が複数の章（目次・一覧表・索引・詳細章など）にまたがって
+            # 言及されることがあり、章ごとに独立してLLMを呼ぶと、同じ実体に別々の物理名が
+            # 付いて重複ページが生成される（旧: name完全一致でしか重複排除していなかった）。
+            # 原本のページ番号(page)は実体単位でほぼ一意なため、page一致＋ラベル類似を
+            # 重複判定に使い、章をまたいでも1エンティティ1ページに正規化する。
+            entities, _seen_names = [], set()
+            _by_page = {}  # page番号 -> entities のインデックス（重複判定用）
             for ci, (cname, ctext) in enumerate(chapter_texts, 1):
                 _task_update(tid, 15 + int(ci / max(1, len(chapter_texts)) * 15), f"エンティティ抽出 {ci}/{len(chapter_texts)}章")
                 try:
@@ -451,8 +457,25 @@ def _do_generate_llmwiki(tid):
                 items = el if isinstance(el, list) else el.get("entities", el.get("concepts", []))
                 for e in (items or []):
                     nm = (e.get("name") or "").strip()
-                    if nm and nm not in _seen:
-                        _seen.add(nm); entities.append(e)
+                    if not nm or nm in _seen_names:
+                        continue
+                    label = _norm(e.get("label") or "")
+                    page = str(e.get("page") or "").strip()
+                    dup = None
+                    if page:
+                        for existing in _by_page.get(page, []):
+                            el_label = _norm(existing.get("label") or "")
+                            if label and el_label and (label == el_label or label in el_label or el_label in label):
+                                dup = existing; break
+                    if dup is not None:
+                        # 重複: 新しい物理名は作らず、由来した章だけ既存エンティティに追記する
+                        dup.setdefault("_chapters", set()).add(cname)
+                        continue
+                    _seen_names.add(nm)
+                    e["_chapters"] = {cname}
+                    entities.append(e)
+                    if page:
+                        _by_page.setdefault(page, []).append(e)
 
             _task_update(tid, 30, f"LLMが {len(entities)} 件のWikiページを生成中…（Karpathy方式）")
             # Step 2: 全エンティティの情報を一度にLLMに渡し、相互リンク付きの全ページを生成
@@ -460,6 +483,8 @@ def _do_generate_llmwiki(tid):
                 f"- {e.get('name','?')}: {e.get('label','?')} (p.{e.get('page','?')}) — {e.get('summary','?')}"
                 for e in entities
             )[:20000]
+            # 章名 -> 本文 の対応表（バッチごとに関連する章の全文だけを渡すために使う）
+            chapter_text_by_name = dict(chapter_texts)
 
             # バッチ処理: エンティティを分割して各バッチでページ生成（全件処理・上限キャップなし）
             batch_size = 15
@@ -481,13 +506,30 @@ def _do_generate_llmwiki(tid):
                     "- 2行目以降に `---\npage: N\n---\n` 形式のYAML frontmatter（出典ページ番号）を置くこと\n"
                     "- 全エンティティ間の相互リンクを張ること。リンク先は `[label](物理名.md)` の標準Markdownリンク形式\n"
                     "- 日本語の見出し・説明・箇条書きを含める\n"
-                    "- 金額・期限・年齢条件等の数値は正確に転記（ハルシネーション禁止）\n"
+                    "- 【最重要】内容は必ず下記【元文書】に実際に書かれている記述だけを転記・要約すること。"
+                    "【元文書】に記載が無い窓口名・金額・条件等は絶対に創作しない。"
+                    "書かれていない場合はその項目を省略する（推測で埋めない）\n"
                     "- 出力は各ファイルを `---FILE---` で区切ってください"
                 )
+                # 【重要】以前はバッチによらず文書全体の先頭12000字(=全体のごく一部)を固定で渡していたため、
+                # 該当箇所がその範囲に無いバッチはLLMが実質ゼロ知識でページ内容を創作していた
+                # （これが重複ページ間で窓口名が食い違う等の実害の原因だった）。
+                # ここではバッチの各エンティティが実際に抽出された章の本文だけを渡すことで、
+                # 常に根拠のある原文をもとに生成させる。
+                batch_chapters = []
+                seen_ch = set()
+                for e in batch_entities:
+                    for ch in sorted(e.get("_chapters") or []):
+                        if ch not in seen_ch:
+                            seen_ch.add(ch); batch_chapters.append(ch)
+                if batch_chapters:
+                    source_text = "\n\n".join(f"### {ch}\n{chapter_text_by_name.get(ch, '')}" for ch in batch_chapters)
+                else:
+                    source_text = raw_text  # 章情報が無い旧データ形式へのフォールバック
                 user_p = (
                     f"【全エンティティ一覧（相互リンク用）】\n{entity_text}\n\n"
                     f"【このバッチで生成するエンティティ】\n{', '.join(batch_names)}\n\n"
-                    f"【元文書】\n{raw_text[:12000]}"
+                    f"【元文書（このバッチのエンティティが実際に記載されている章のみ）】\n{source_text[:40000]}"
                 )
                 result = llm_text(sys_p, user_p)
 
@@ -1465,7 +1507,7 @@ def build_cypher(kg):
 
 def push_to_neo4j(kg):
     """起動中の Neo4j があれば MERGE で投入。無ければグレースフルにスキップ。"""
-    uri = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+    uri = os.environ.get("NEO4J_URI") or "bolt://neo4j:7687"
     user = os.environ.get("NEO4J_USER", "neo4j")
     pw = os.environ.get("NEO4J_PASSWORD", "")
     if not pw:
@@ -1588,7 +1630,7 @@ def _push_kg_to_neo4j(kg):
     戻り値: (connected: bool, message: str)"""
     try:
         from neo4j import GraphDatabase
-        ndriver = GraphDatabase.driver(os.environ.get("NEO4J_URI", "bolt://localhost:7687"),
+        ndriver = GraphDatabase.driver(os.environ.get("NEO4J_URI") or "bolt://neo4j:7687",
                                         auth=(os.environ.get("NEO4J_USER", "neo4j"), os.environ.get("NEO4J_PASSWORD", "password123")))
         n_edges_pushed = 0
         with ndriver.session(database="neo4j") as session:
@@ -1634,7 +1676,7 @@ def _do_extract_kg(tid):
             _task_update(tid, 10, "既存データをクリア中…")
             try:
                 from neo4j import GraphDatabase
-                ndriver = GraphDatabase.driver(os.environ.get("NEO4J_URI", "bolt://localhost:7687"),
+                ndriver = GraphDatabase.driver(os.environ.get("NEO4J_URI") or "bolt://neo4j:7687",
                                                 auth=(os.environ.get("NEO4J_USER", "neo4j"), os.environ.get("NEO4J_PASSWORD", "password123")))
                 with ndriver.session(database="neo4j") as session:
                     session.run("MATCH (n) DETACH DELETE n")
@@ -1900,7 +1942,7 @@ def get_kg_from_neo4j():
     """投入後の Neo4j 実グラフ（複数回抽出をMERGEで累積したもの）をクエリして可視化用に返す。
     /api/kg/extracted が『最新1回分の抽出JSON』を返すのに対し、こちらは『DBの実データ』を返す。"""
     _load_env_file()
-    uri = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+    uri = os.environ.get("NEO4J_URI") or "bolt://neo4j:7687"
     user = os.environ.get("NEO4J_USER", "neo4j")
     pw = os.environ.get("NEO4J_PASSWORD", "")
     if not pw:
@@ -2013,7 +2055,7 @@ def _llm_text(sys_prompt, user_prompt):
 def _get_kg_graph():
     """3.1の抽出KGを {nodes, edges, source} で返す。Neo4j優先・失敗時は kg_extracted。"""
     _load_env_file()
-    uri = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
+    uri = os.environ.get("NEO4J_URI") or "bolt://neo4j:7687"
     user = os.environ.get("NEO4J_USER", "neo4j")
     pw = os.environ.get("NEO4J_PASSWORD", "")
     if pw:
@@ -2537,18 +2579,22 @@ _WIKI_AGENTIC_PLANNER_SYS = (
     "あなたはWikiページのリンクをたどって情報を探すエージェントです。質問と、現在読んでいるWikiページ本文、"
     "および現在のページからたどれるリンク候補（表示名の一覧）が与えられます。"
     "質問に答えるための情報が現在のページ群だけで十分なら done:true とし、follow は空配列にしてください。"
-    "不十分で、リンク候補の中に関連しそうなものがあれば、その表示名を関連度が高い順に最大2件 follow に入れてください"
+    "不十分で、リンク候補の中に関連しそうなものがあれば、その表示名を関連度が高い順に最大3件 follow に入れてください"
     "（無関係な候補しか無ければ follow は空配列にし、done:true としてください）。"
     '出力JSON: {"done": true/false, "follow": ["リンク表示名", ...], "reason": "簡潔な理由"}'
 )
 
 _WIKI_AGENTIC_ANSWER_SYS = (
     f"あなたは、{KB_LABEL}の案内アシスタントです。以下のLLM-Wikiページ本文だけを使って、"
-    "日本語で簡潔に答えてください。本文にない情報は創作しないでください。答えられない場合は"
-    "『分かりません』と述べてください。"
+    "日本語で簡潔に答えてください。\n"
+    "【重要】ページ本文中の記述は、多少の言い換え・要約や、複数箇所・複数ページの記述を"
+    "組み合わせて答えを構成することも含め、根拠として積極的に使ってください。"
+    "文中に答えが（表現を変えてでも）書かれているのに『分かりません』と答えるのは避けてください。"
+    "本文に一切登場しない固有名詞・金額・数値・条件だけを創作しないでください。"
+    "どのページにも関連する記載が本当に無い場合のみ『分かりません』と述べてください。"
 )
 
-def _wiki_agentic_search(question, max_hops=3, max_pages=6):
+def _wiki_agentic_search(question, max_hops=3, max_pages=8, seed_top_k=2):
     """LLM-Wikiのmdリンク構造だけをたどるAgentic Search（KG不使用）。
     ① 埋め込みで起点ページを選ぶ → ② 現在のページ群からたどれるリンク候補をLLMに提示し、
     関連しそうなものを選んでもらう → ③ 十分になるかmax_hopsに達するまで②を繰り返す →
@@ -2569,15 +2615,18 @@ def _wiki_agentic_search(question, max_hops=3, max_pages=6):
         trace.append({"node": "WikiSeed(埋め込み)", "txt": f"起点検索に失敗: {ex}"})
     if not scored:
         return {"answer": "分かりません（起点ページの検索に失敗しました）", "trace": trace or [{"node": "WikiSeed", "txt": "候補なし"}], "pages_visited": []}
-    seed_slug = scored[0][1]
-    trace.append({"node": "WikiSeed(埋め込み)", "txt": f"起点ページ: {seed_slug}（類似度{scored[0][0]:.2f}）"})
+    # 起点は上位1件だけでなく複数件（既定2件）にする。単一の起点選定ミスで
+    # 正解ページへのリンクが全く辿れなくなる（[リンク未到達]）ケースを減らすため。
+    seed_slugs = [s for _, s in scored[:seed_top_k]]
+    trace.append({"node": "WikiSeed(埋め込み)", "txt": "起点ページ: " + ", ".join(f"{s}（類似度{sc:.2f}）" for sc, s in scored[:seed_top_k])})
 
     visited = {}
     def _load(slug):
         c = _read_wiki(slug)
         if c is not None:
             visited[slug] = c[:3000]
-    _load(seed_slug)
+    for s in seed_slugs:
+        _load(s)
 
     for hop in range(max_hops):
         if len(visited) >= max_pages:
@@ -2603,7 +2652,7 @@ def _wiki_agentic_search(question, max_hops=3, max_pages=6):
             trace.append({"node": "Critic(LLM)", "txt": ("根拠十分 ✓" if plan.get("done") else "関連リンクなし → 終了") + (f"（{plan.get('reason')}）" if plan.get("reason") else "")})
             break
         followed = []
-        for t in (plan.get("follow") or [])[:2]:
+        for t in (plan.get("follow") or [])[:3]:
             target = candidates.get(t)
             if not target:
                 for k, v in candidates.items():   # 表示名の完全一致が無ければ部分一致でフォールバック
